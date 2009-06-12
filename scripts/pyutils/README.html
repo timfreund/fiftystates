@@ -1,0 +1,389 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Python Scraper API &mdash; The Fifty State Project v0.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="The Fifty State Project v0.1 documentation" href="../../index.html" />
+    <link rel="next" title="Data Format" href="../../data/README.html" />
+    <link rel="prev" title="Overview" href="../../README.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../data/README.html" title="Data Format"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../../README.html" title="Overview"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../../index.html">The Fifty State Project v0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="python-scraper-api">
+<h1>Python Scraper API<a class="headerlink" href="#python-scraper-api" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="legislationscraper">
+<h2>LegislationScraper<a class="headerlink" href="#legislationscraper" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pyutils.legislation.LegislationScraper">
+<em class="property">
+class </em><tt class="descclassname">pyutils.legislation.</tt><tt class="descname">LegislationScraper</tt><a class="headerlink" href="#pyutils.legislation.LegislationScraper" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="pyutils.legislation.LegislationScraper.urlopen">
+<tt class="descname">urlopen</tt><big>(</big><em>url</em><big>)</big><a class="headerlink" href="#pyutils.legislation.LegislationScraper.urlopen" title="Permalink to this definition">¶</a></dt>
+<dd>Grabs a URL, returning a cached version if available.</dd></dl>
+
+<dl class="method">
+<dt id="pyutils.legislation.LegislationScraper.log">
+<tt class="descname">log</tt><big>(</big><em>msg</em><big>)</big><a class="headerlink" href="#pyutils.legislation.LegislationScraper.log" title="Permalink to this definition">¶</a></dt>
+<dd>Output debugging information if verbose mode is enabled.</dd></dl>
+
+<dl class="method">
+<dt id="pyutils.legislation.LegislationScraper.add_bill">
+<tt class="descname">add_bill</tt><big>(</big><em>bill</em>, <em>*args</em><big>)</big><a class="headerlink" href="#pyutils.legislation.LegislationScraper.add_bill" title="Permalink to this definition">¶</a></dt>
+<dd>Add a scraped <a title="pyutils.legislation.Bill" class="reference internal" href="#pyutils.legislation.Bill"><tt class="xref docutils literal"><span class="pre">pyutils.legislation.Bill</span></tt></a> object.</dd></dl>
+
+<dl class="method">
+<dt id="pyutils.legislation.LegislationScraper.add_legislator">
+<tt class="descname">add_legislator</tt><big>(</big><em>legislator</em><big>)</big><a class="headerlink" href="#pyutils.legislation.LegislationScraper.add_legislator" title="Permalink to this definition">¶</a></dt>
+<dd>Add a scraped <a title="pyutils.legislation.Legislator" class="reference internal" href="#pyutils.legislation.Legislator"><tt class="xref docutils literal"><span class="pre">pyutils.legislation.Legislator</span></tt></a> object.</dd></dl>
+
+<dl class="method">
+<dt id="pyutils.legislation.LegislationScraper.scrape_bills">
+<tt class="descname">scrape_bills</tt><big>(</big><em>chamber</em>, <em>year</em><big>)</big><a class="headerlink" href="#pyutils.legislation.LegislationScraper.scrape_bills" title="Permalink to this definition">¶</a></dt>
+<dd>Grab all the bills for a given chamber and year.
+Should raise a NoDataForYear exception if the year is invalid.</dd></dl>
+
+<dl class="method">
+<dt id="pyutils.legislation.LegislationScraper.scrape_legislators">
+<tt class="descname">scrape_legislators</tt><big>(</big><em>chamber</em>, <em>year</em><big>)</big><a class="headerlink" href="#pyutils.legislation.LegislationScraper.scrape_legislators" title="Permalink to this definition">¶</a></dt>
+<dd>Grab all the legislators who served in a given year.
+Should raise a NoDataForYear exception if the year is invalid.</dd></dl>
+
+<dl class="method">
+<dt id="pyutils.legislation.LegislationScraper.scrape_metadata">
+<tt class="descname">scrape_metadata</tt><big>(</big><big>)</big><a class="headerlink" href="#pyutils.legislation.LegislationScraper.scrape_metadata" title="Permalink to this definition">¶</a></dt>
+<dd>Grab metadata about this state&#8217;s legislature.</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="bill">
+<h2>Bill<a class="headerlink" href="#bill" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pyutils.legislation.Bill">
+<em class="property">
+class </em><tt class="descclassname">pyutils.legislation.</tt><tt class="descname">Bill</tt><big>(</big><em>session</em>, <em>chamber</em>, <em>bill_id</em>, <em>title</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pyutils.legislation.Bill" title="Permalink to this definition">¶</a></dt>
+<dd><p>This represents a state bill or resolution.
+It is just a dict with some required fields and a few
+convenience methods. Any key/value pairs stored in it besides the
+required fields will be saved and stored in the backend database
+for later use.</p>
+<dl class="method">
+<dt id="pyutils.legislation.Bill.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>session</em>, <em>chamber</em>, <em>bill_id</em>, <em>title</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pyutils.legislation.Bill.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new <tt class="xref docutils literal"><span class="pre">Bill</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>session</em> &#8211; the session in which the bill was introduced.</li>
+<li><em>chamber</em> &#8211; the chamber in which the bill was introduced:
+either &#8216;upper&#8217; or &#8216;lower&#8217;</li>
+<li><em>bill_id</em> &#8211; an identifier assigned by the state to this bill
+(should be unique within the context of this chamber/session)
+e.g.: &#8216;HB 1&#8217;, &#8216;S. 102&#8217;, &#8216;H.R. 18&#8217;</li>
+<li><em>title</em> &#8211; a title or short description of this bill provided by
+the state</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Any additional keyword arguments will be associated with this
+bill and stored in the database.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyutils.legislation.Bill.add_action">
+<tt class="descname">add_action</tt><big>(</big><em>actor</em>, <em>action</em>, <em>date</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pyutils.legislation.Bill.add_action" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add an action that was performed on this bill.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>actor</em> &#8211; a string representing who performed the action.
+If the action is associated with one of the chambers this
+should be &#8216;upper&#8217; or &#8216;lower&#8217;. Alternatively, this could be
+the name of a committee, a specific legislator, or an outside
+actor such as &#8216;Governor&#8217;.</li>
+<li><em>action</em> &#8211; a string representing the action performed, e.g. &#8216;Introduced&#8217;,
+&#8216;Signed by the Governor&#8217;, &#8216;Amended&#8217;</li>
+<li><em>date</em> &#8211; the date/time this action was performed.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyutils.legislation.Bill.add_sponsor">
+<tt class="descname">add_sponsor</tt><big>(</big><em>type</em>, <em>name</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pyutils.legislation.Bill.add_sponsor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Associate a sponsor with this bill.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>type</em> &#8211; the type of sponsorship, e.g. &#8216;primary&#8217;, &#8216;cosponsor&#8217;</li>
+<li><em>name</em> &#8211; the name of the sponsor as provided by the state</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyutils.legislation.Bill.add_version">
+<tt class="descname">add_version</tt><big>(</big><em>name</em>, <em>url</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pyutils.legislation.Bill.add_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a version of the text of this bill.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>name</em> &#8211; a name given to this version of the text, e.g. &#8216;As Introduced&#8217;,
+&#8216;Version 2&#8217;, &#8216;As amended&#8217;, &#8216;Enrolled&#8217;</li>
+<li><em>url</em> &#8211; the location of this version on the state&#8217;s legislative website.
+If multiple formats are provided, a good rule of thumb is to
+prefer text, followed by html, followed by pdf/word/etc.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyutils.legislation.Bill.add_vote">
+<tt class="descname">add_vote</tt><big>(</big><em>vote</em><big>)</big><a class="headerlink" href="#pyutils.legislation.Bill.add_vote" title="Permalink to this definition">¶</a></dt>
+<dd>Associate a <a title="pyutils.legislation.Vote" class="reference internal" href="#pyutils.legislation.Vote"><tt class="xref docutils literal"><span class="pre">pyutils.legislation.Vote</span></tt></a> object with this bill.</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="vote">
+<h2>Vote<a class="headerlink" href="#vote" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pyutils.legislation.Vote">
+<em class="property">
+class </em><tt class="descclassname">pyutils.legislation.</tt><tt class="descname">Vote</tt><big>(</big><em>chamber</em>, <em>date</em>, <em>motion</em>, <em>passed</em>, <em>yes_count</em>, <em>no_count</em>, <em>other_count</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pyutils.legislation.Vote" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="pyutils.legislation.Vote.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>chamber</em>, <em>date</em>, <em>motion</em>, <em>passed</em>, <em>yes_count</em>, <em>no_count</em>, <em>other_count</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pyutils.legislation.Vote.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new <tt class="xref docutils literal"><span class="pre">Vote</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>chamber</em> &#8211; the chamber in which the vote was taken, &#8216;upper&#8217; or &#8216;lower&#8217;</li>
+<li><em>date</em> &#8211; the date/time when the vote was taken</li>
+<li><em>motion</em> &#8211; a string representing the motion that was being voted on</li>
+<li><em>passed</em> &#8211; did the vote pass, True or False</li>
+<li><em>yes_count</em> &#8211; the number of &#8216;yes&#8217; votes</li>
+<li><em>no_count</em> &#8211; the number of &#8216;no&#8217; votes</li>
+<li><em>other_count</em> &#8211; the number of abstentions, &#8216;present&#8217; votes, or anything
+else not covered by &#8216;yes&#8217; or &#8216;no&#8217;.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Any additional keyword arguments will be associated with this
+vote and stored in the database.</p>
+<p>Examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">Vote</span><span class="p">(</span><span class="s">&#39;upper&#39;</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">,</span> <span class="s">&#39;12/7/08&#39;</span><span class="p">,</span> <span class="s">&#39;Final passage&#39;</span><span class="p">,</span>
+     <span class="bp">True</span><span class="p">,</span> <span class="mf">30</span><span class="p">,</span> <span class="mf">8</span><span class="p">,</span> <span class="mf">3</span><span class="p">)</span>
+<span class="n">Vote</span><span class="p">(</span><span class="s">&#39;lower&#39;</span><span class="p">,</span> <span class="s">&#39;Finance Committee&#39;</span><span class="p">,</span> <span class="s">&#39;3/4/03 03:40:22&#39;</span><span class="p">,</span>
+     <span class="s">&#39;Recommend passage&#39;</span><span class="p">,</span> <span class="mf">12</span><span class="p">,</span> <span class="mf">1</span><span class="p">,</span> <span class="mf">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyutils.legislation.Vote.yes">
+<tt class="descname">yes</tt><big>(</big><em>legislator</em><big>)</big><a class="headerlink" href="#pyutils.legislation.Vote.yes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Indicate that a legislator (given as a string of their name) voted
+&#8216;yes&#8217;.</p>
+<p>Examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">vote</span><span class="o">.</span><span class="n">yes</span><span class="p">(</span><span class="s">&#39;Smith&#39;</span><span class="p">)</span>
+<span class="n">vote</span><span class="o">.</span><span class="n">yes</span><span class="p">(</span><span class="s">&#39;Alan Hoerth&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pyutils.legislation.Vote.no">
+<tt class="descname">no</tt><big>(</big><em>legislator</em><big>)</big><a class="headerlink" href="#pyutils.legislation.Vote.no" title="Permalink to this definition">¶</a></dt>
+<dd>Indicate that a legislator (given as a string of their name) voted
+&#8216;no&#8217;.</dd></dl>
+
+<dl class="method">
+<dt id="pyutils.legislation.Vote.other">
+<tt class="descname">other</tt><big>(</big><em>legislator</em><big>)</big><a class="headerlink" href="#pyutils.legislation.Vote.other" title="Permalink to this definition">¶</a></dt>
+<dd>Indicate that a legislator (given as a string of their name) abstained,
+voted &#8216;present&#8217;, or made any other vote not covered by &#8216;yes&#8217; or &#8216;no&#8217;.</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="legislator">
+<h2>Legislator<a class="headerlink" href="#legislator" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pyutils.legislation.Legislator">
+<em class="property">
+class </em><tt class="descclassname">pyutils.legislation.</tt><tt class="descname">Legislator</tt><big>(</big><em>session</em>, <em>chamber</em>, <em>district</em>, <em>full_name</em>, <em>first_name</em>, <em>last_name</em>, <em>middle_name</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pyutils.legislation.Legislator" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="pyutils.legislation.Legislator.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>session</em>, <em>chamber</em>, <em>district</em>, <em>full_name</em>, <em>first_name</em>, <em>last_name</em>, <em>middle_name</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pyutils.legislation.Legislator.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a Legislator.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><em>session</em> &#8211; the session in which this legislator served</li>
+<li><em>chamber</em> &#8211; the chamber in which this legislator served, &#8216;upper&#8217; or &#8216;lower&#8217;</li>
+<li><em>district</em> &#8211; the district this legislator is representing, as given
+by the state, e.g. &#8216;District 2&#8217;, &#8216;7th&#8217;, &#8216;District C&#8217;.</li>
+<li><em>full_name</em> &#8211; the full name of this legislator</li>
+<li><em>first_name</em> &#8211; the first name of this legislator</li>
+<li><em>last_name</em> &#8211; the last name of this legislator</li>
+<li><em>middle_name</em> &#8211; a middle name or initial of this legislator, blank
+if none is provided</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Any additional keyword arguments will be associated with this
+Legislator and stored in the database.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="exceptions">
+<h2>Exceptions<a class="headerlink" href="#exceptions" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pyutils.legislation.ScrapeError">
+<em class="property">
+class </em><tt class="descclassname">pyutils.legislation.</tt><tt class="descname">ScrapeError</tt><a class="headerlink" href="#pyutils.legislation.ScrapeError" title="Permalink to this definition">¶</a></dt>
+<dd>Base class for scrape errors.</dd></dl>
+
+<dl class="class">
+<dt id="pyutils.legislation.NoDataForYear">
+<em class="property">
+class </em><tt class="descclassname">pyutils.legislation.</tt><tt class="descname">NoDataForYear</tt><big>(</big><em>year</em><big>)</big><a class="headerlink" href="#pyutils.legislation.NoDataForYear" title="Permalink to this definition">¶</a></dt>
+<dd>Exception to be raised when no data exists for a given year</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Python Scraper API</a><ul>
+<li><a class="reference external" href="#legislationscraper">LegislationScraper</a></li>
+<li><a class="reference external" href="#bill">Bill</a></li>
+<li><a class="reference external" href="#vote">Vote</a></li>
+<li><a class="reference external" href="#legislator">Legislator</a></li>
+<li><a class="reference external" href="#exceptions">Exceptions</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../../README.html"
+                                  title="previous chapter">Overview</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../../data/README.html"
+                                  title="next chapter">Data Format</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../../_sources/scripts/pyutils/README.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../data/README.html" title="Data Format"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../../README.html" title="Overview"
+             >previous</a> |</li>
+        <li><a href="../../index.html">The Fifty State Project v0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
+</html>

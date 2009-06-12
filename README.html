@@ -1,0 +1,237 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Overview &mdash; The Fifty State Project v0.1 documentation</title>
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="The Fifty State Project v0.1 documentation" href="index.html" />
+    <link rel="next" title="Python Scraper API" href="scripts/pyutils/README.html" />
+    <link rel="prev" title="Fifty State Project Documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="scripts/pyutils/README.html" title="Python Scraper API"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Fifty State Project Documentation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">The Fifty State Project v0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="about-the-project">
+<h2>About the Project<a class="headerlink" href="#about-the-project" title="Permalink to this headline">¶</a></h2>
+<p>The goal here is to build scrapers and parsers in order to get as much state
+legislative data as possible in one place.</p>
+<p>For details on the reasons for the project and goals behind the project see
+<a class="reference external" href="http://sunlightlabs.com/blog/2009/02/26/fifty-state-project/">the project announcement</a>.</p>
+<p>For an editable overview of each state&#8217;s progress visit the <a class="reference external" href="http://wiki.sunlightlabs.com/index.php/State_Legislation_Page">Sunlight Labs Wiki</a>.</p>
+<div class="section" id="project-goals">
+<h3>Project Goals<a class="headerlink" href="#project-goals" title="Permalink to this headline">¶</a></h3>
+<ol class="arabic">
+<li><p class="first">Collect URLs of State Legislature and Legislative Information Pages [done]</p>
+</li>
+<li><dl class="first docutils">
+<dt>Grab legislators and legislation</dt>
+<dd><ol class="first last arabic simple">
+<li>Build scrapers and obtain data files for legislation in each of the fifty states</li>
+<li>create sponsor relationship between legislators and legislation</li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Grab votes</dt>
+<dd><ol class="first last arabic simple">
+<li>Build scrapers and obtain data files for legislator votes on legislation</li>
+<li>create voting relationship between legislators and legislation</li>
+</ol>
+</dd>
+</dl>
+</li>
+<li><p class="first">Build tools on top of data</p>
+</li>
+</ol>
+<p>To encourage as many contributions as possible we aren&#8217;t saying &#8220;write in Python&#8221;
+or anything, but we do need the code to follow a few guidelines.</p>
+<p>For details on how scripts should be written and how they should run see scripts/README.rst.
+For details on how data should be stored see data/README.rst.</p>
+</div>
+<div class="section" id="usage-proposed">
+<h3>Usage (proposed)<a class="headerlink" href="#usage-proposed" title="Permalink to this headline">¶</a></h3>
+<dl class="docutils">
+<dt>Valid options:</dt>
+<dd>&#8211;year: a year or years the parser should attempt
+&#8211;all: Attempt to parse years from 1969-2009
+&#8211;upper: Parse upper chamber
+&#8211;lower: Parse lower chamber</dd>
+<dt>The vision is that the flow will look something like this:</dt>
+<dd>$  ./scripts/nc/get_legislation &#8211;year=2009 &#8211;upper</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="contributing">
+<h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h2>
+<p>If you are interested in contributing the recommended procedure is to check on
+the <a class="reference external" href="http://wiki.sunlightlabs.com/index.php/State_Legislation_Page">Sunlight Labs Wiki</a> and in the repository to see where your state is.
+The next step is generally to announce your interest on the <a class="reference external" href="http://groups.google.com/group/sunlightlabs">Sunlight Labs Mailing
+List</a> (this is where you can ask
+questions and make suggestions regarding the project).</p>
+<div class="section" id="managing-a-state">
+<h3>Managing a State<a class="headerlink" href="#managing-a-state" title="Permalink to this headline">¶</a></h3>
+<p>Once you have claimed a state on the wiki and mailing list you should probably
+maintain your own fork of the project on <a class="reference external" href="http://github.com">github</a>.</p>
+<p>Please avoid making changes to files in other states/etc. on your state branch.
+Stick to editing files in the scripts/<em>your_state</em> directory and where necessary
+in any relevant utils directories.</p>
+<p>Whenever your state script works as it should announce it on the mailing list and
+someone will merge your changes into the core.</p>
+</div>
+<div class="section" id="licensing">
+<h3>Licensing<a class="headerlink" href="#licensing" title="Permalink to this headline">¶</a></h3>
+<p>We feel that in order to protect everyone&#8217;s intellectual property it makes the
+most sense to keep the code under the <a class="reference external" href="http://www.fsf.org/licensing/licenses/agpl-3.0.html">AGPL license</a>.
+In a nutshell this means that you are not permitted to make changes to this source
+without releasing your code as well, this is intended to prevent abuse but we
+are sensitive to license choice on a project of this scale so if you have strong
+objections please raise them on the mailing list. See LICENSING for the full terms
+of the AGPLv3.</p>
+</div>
+</div>
+<div class="section" id="requirements">
+<h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="python-2-5">
+<h3>Python (2.5+)<a class="headerlink" href="#python-2-5" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>BeautifulSoup</li>
+<li>html5lib</li>
+<li>simplejson if on Python 2.5</li>
+</ul>
+</div>
+<div class="section" id="ruby-1-8">
+<h3>Ruby (1.8.*+)<a class="headerlink" href="#ruby-1-8" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li>hpricot (gem install hpricot)</li>
+<li>fastercsv (gem install fastercsv)</li>
+<li>mechanize (gem install mechanize)</li>
+</ul>
+</div>
+<div class="section" id="a-note-on-new-requirements">
+<h3>A note on new requirements<a class="headerlink" href="#a-note-on-new-requirements" title="Permalink to this headline">¶</a></h3>
+<p>Because there are potentially fifty plus contributors to this project, a real
+effort should be made to keep the requirements of running the full suite to a minimum.</p>
+<p>In other words, if you can write your parser in language X and Y, choose language X
+if language X is already a requirement.
+If you are using a language (say Python) and you need to parse HTML and there is
+already an HTML parsing library (say BeautifulSoup) favor that over some other
+library (unless absolutely necessary).</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Overview</a><ul>
+<li><a class="reference external" href="#about-the-project">About the Project</a><ul>
+<li><a class="reference external" href="#project-goals">Project Goals</a></li>
+<li><a class="reference external" href="#usage-proposed">Usage (proposed)</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#contributing">Contributing</a><ul>
+<li><a class="reference external" href="#managing-a-state">Managing a State</a></li>
+<li><a class="reference external" href="#licensing">Licensing</a></li>
+</ul>
+</li>
+<li><a class="reference external" href="#requirements">Requirements</a><ul>
+<li><a class="reference external" href="#python-2-5">Python (2.5+)</a></li>
+<li><a class="reference external" href="#ruby-1-8">Ruby (1.8.*+)</a></li>
+<li><a class="reference external" href="#a-note-on-new-requirements">A note on new requirements</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="index.html"
+                                  title="previous chapter">Fifty State Project Documentation</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="scripts/pyutils/README.html"
+                                  title="next chapter">Python Scraper API</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="_sources/README.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="scripts/pyutils/README.html" title="Python Scraper API"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Fifty State Project Documentation"
+             >previous</a> |</li>
+        <li><a href="index.html">The Fifty State Project v0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
+</html>

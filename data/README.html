@@ -1,0 +1,195 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Data Format &mdash; The Fifty State Project v0.1 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.1',
+        COLLAPSE_MODINDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="The Fifty State Project v0.1 documentation" href="../index.html" />
+    <link rel="next" title="Backend Code" href="../backend/README.html" />
+    <link rel="prev" title="Python Scraper API" href="../scripts/pyutils/README.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../backend/README.html" title="Backend Code"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="../scripts/pyutils/README.html" title="Python Scraper API"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../index.html">The Fifty State Project v0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="data-format">
+<h1>Data Format<a class="headerlink" href="#data-format" title="Permalink to this headline">¶</a></h1>
+<p>This directory exists to be populated by the various scripts. Each state should have a toplevel directory named after the two-letter state abbreviation.</p>
+<div class="section" id="state-metadata">
+<h2>State Metadata<a class="headerlink" href="#state-metadata" title="Permalink to this headline">¶</a></h2>
+<p>In each state&#8217;s directory should be a file <tt class="docutils literal"><span class="pre">state_metadata.json</span></tt>. This file should contain a single object with at least the following required fields:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">state_name</span></tt>: the name of this state, e.g. <tt class="docutils literal"><span class="pre">&quot;Pennsylvania&quot;</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">legislature_name</span></tt>: the name of the state legislature, e.g. <tt class="docutils literal"><span class="pre">&quot;Pennsylvania</span> <span class="pre">General</span> <span class="pre">Assembly&quot;</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">upper_chamber_name</span></tt> and <tt class="docutils literal"><span class="pre">lower_chamber_name</span></tt>: the names of the chambers of the state legislature, e.g. <tt class="docutils literal"><span class="pre">&quot;Senate&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;House</span> <span class="pre">of</span> <span class="pre">Representatives&quot;</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">upper_title</span></tt> and <tt class="docutils literal"><span class="pre">lower_title</span></tt>: the title that members of each chamber hold, e.g. &#8220;Senator&#8221;, &#8220;Representative&#8221;</li>
+<li><tt class="docutils literal"><span class="pre">upper_term</span></tt> and <tt class="docutils literal"><span class="pre">lower_term</span></tt>: the length in years of a term in each chamber, e.g. <tt class="docutils literal"><span class="pre">2</span></tt>, <tt class="docutils literal"><span class="pre">4</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">sessions</span></tt>: a chronological listing of valid sessions, e.g. <tt class="docutils literal"><span class="pre">['2005-2006',</span> <span class="pre">'2007-2008',</span> <span class="pre">'2009-2010']</span></tt> or <tt class="docutils literal"><span class="pre">['81st',</span> <span class="pre">'82nd',</span> <span class="pre">'83rd']</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">session_details</span></tt>: a dictionary with an entry for each session with the following attributes:</li>
+</ul>
+<blockquote>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">years</span></tt>: a list of the years this session covers, e.g. <tt class="docutils literal"><span class="pre">[2007]</span></tt> or <tt class="docutils literal"><span class="pre">[2007,</span> <span class="pre">2008]</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">sub_sessions</span></tt>: a list of special/sub sessions associated with this session, e.g. <tt class="docutils literal"><span class="pre">['2001</span> <span class="pre">Special</span> <span class="pre">Session</span> <span class="pre">#1',</span> <span class="pre">'2001</span> <span class="pre">Special</span> <span class="pre">Session</span> <span class="pre">#2']</span></tt> or <tt class="docutils literal"><span class="pre">[]</span></tt></li>
+</ul>
+</blockquote>
+</div>
+<div class="section" id="bills">
+<h2>Bills<a class="headerlink" href="#bills" title="Permalink to this headline">¶</a></h2>
+<p>Underneath the state&#8217;s directory should be a &#8216;bills&#8217; directory with a separate JSON file for each scraped bill. Each file should contain a single object with the following required fields:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">bill_id</span></tt>: the identifier given to this bill by the state, e.g. <tt class="docutils literal"><span class="pre">&quot;H.B.</span> <span class="pre">101&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;S</span> <span class="pre">2&quot;</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">session</span></tt>: the session in which this bill was introduced</li>
+<li><tt class="docutils literal"><span class="pre">chamber</span></tt>: the chamber in which this bill was introduced, <tt class="docutils literal"><span class="pre">&quot;upper&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;lower&quot;</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">title</span></tt>: a title or description given to this bill by the state</li>
+<li><tt class="docutils literal"><span class="pre">sponsors</span></tt>: a list of legislators who sponsor this bill. Each entry should be an object with at least the following required fields:</li>
+</ul>
+<blockquote>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">name</span></tt>: the name of the sponsor</li>
+<li><tt class="docutils literal"><span class="pre">type</span></tt>: the type of sponsorship, e.g. <tt class="docutils literal"><span class="pre">&quot;primary&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;cosponsor&quot;</span></tt></li>
+</ul>
+</blockquote>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">actions</span></tt>: a (chronological if possible) list of &#8216;actions&#8217; that were performed in relation to this bill. Each entry should be an object with at least the following required fields:</li>
+</ul>
+<blockquote>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">date</span></tt>: the date/time the action was performed</li>
+<li><tt class="docutils literal"><span class="pre">actor</span></tt>: the person/body/office which performed the action. If the action is associated with either chamber, <tt class="docutils literal"><span class="pre">&quot;upper&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;lower&quot;</span></tt>. Other possibilities may include <tt class="docutils literal"><span class="pre">&quot;Governor&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;Senate</span> <span class="pre">Finance</span> <span class="pre">Committee&quot;</span></tt>, etc.</li>
+<li><tt class="docutils literal"><span class="pre">action</span></tt>: what happened, e.g. <tt class="docutils literal"><span class="pre">&quot;Introduced&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;Referred</span> <span class="pre">to</span> <span class="pre">Committee</span> <span class="pre">X&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;Signed&quot;</span></tt></li>
+</ul>
+</blockquote>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">votes</span></tt>: a (chronological if possible) list of votes associated with this bill. Each entry should be an object with at least the following required fields:</li>
+</ul>
+<blockquote>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">chamber</span></tt>: the chamber where the vote took place, <tt class="docutils literal"><span class="pre">&quot;upper&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;lower&quot;</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">date</span></tt>: the date/time when the vote was taken</li>
+<li><tt class="docutils literal"><span class="pre">motion</span></tt>: a string representing the motion that was being voted on</li>
+<li><tt class="docutils literal"><span class="pre">passed</span></tt>: boolean, did the vote pass or</li>
+<li><tt class="docutils literal"><span class="pre">yes_count</span></tt>, <tt class="docutils literal"><span class="pre">no_count</span></tt>: the number of &#8216;yes&#8217; and &#8216;no&#8217; votes</li>
+<li><tt class="docutils literal"><span class="pre">other_count</span></tt>: the number of (non-)votes not covered by &#8216;yes&#8217; or &#8216;no&#8217; (such as abstentions)</li>
+<li><tt class="docutils literal"><span class="pre">yes_votes</span></tt>, <tt class="docutils literal"><span class="pre">no_votes</span></tt>, <tt class="docutils literal"><span class="pre">other_votes</span></tt>: a list of votes of each type. Each entry should be an object with at least the following required fields:</li>
+</ul>
+<blockquote>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">name</span></tt>: the name of the legislator</li>
+</ul>
+</blockquote>
+</blockquote>
+</div>
+<div class="section" id="legislators">
+<h2>Legislators<a class="headerlink" href="#legislators" title="Permalink to this headline">¶</a></h2>
+<p>Underneath the state&#8217;s directory should be a &#8216;legislators&#8217; directory with a separate JSON file for each legislator. Note that legislators who have served multiple terms should have a separate file for each session they served in. Each file should contain a single object with the following required fields:</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">session</span></tt>: the session in which this legislator served</li>
+<li><tt class="docutils literal"><span class="pre">chamber</span></tt>: the chamber in which this legislator served, &#8216;upper&#8217; or &#8216;lower&#8217;</li>
+<li><tt class="docutils literal"><span class="pre">district</span></tt>: the district this legislator is representing, as given by the state, e.g. &#8216;District 2&#8217;, &#8216;7th&#8217;, &#8216;District C&#8217;.</li>
+<li><tt class="docutils literal"><span class="pre">full_name</span></tt>: the full name of this legislator</li>
+<li><tt class="docutils literal"><span class="pre">first_name</span></tt>: the first name of this legislator</li>
+<li><tt class="docutils literal"><span class="pre">last_name</span></tt>: the last name of this legislator</li>
+<li><tt class="docutils literal"><span class="pre">middle_name</span></tt>: a middle name or initial of this legislator, empty string if none is provided</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <h3><a href="../index.html">Table Of Contents</a></h3>
+            <ul>
+<li><a class="reference external" href="">Data Format</a><ul>
+<li><a class="reference external" href="#state-metadata">State Metadata</a></li>
+<li><a class="reference external" href="#bills">Bills</a></li>
+<li><a class="reference external" href="#legislators">Legislators</a></li>
+</ul>
+</li>
+</ul>
+
+            <h4>Previous topic</h4>
+            <p class="topless"><a href="../scripts/pyutils/README.html"
+                                  title="previous chapter">Python Scraper API</a></p>
+            <h4>Next topic</h4>
+            <p class="topless"><a href="../backend/README.html"
+                                  title="next chapter">Backend Code</a></p>
+            <h3>This Page</h3>
+            <ul class="this-page-menu">
+              <li><a href="../_sources/data/README.txt"
+                     rel="nofollow">Show Source</a></li>
+            </ul>
+          <div id="searchbox" style="display: none">
+            <h3>Quick search</h3>
+              <form class="search" action="../search.html" method="get">
+                <input type="text" name="q" size="18" />
+                <input type="submit" value="Go" />
+                <input type="hidden" name="check_keywords" value="yes" />
+                <input type="hidden" name="area" value="default" />
+              </form>
+              <p class="searchtip" style="font-size: 90%">
+              Enter search terms or a module, class or function name.
+              </p>
+          </div>
+          <script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../backend/README.html" title="Backend Code"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="../scripts/pyutils/README.html" title="Python Scraper API"
+             >previous</a> |</li>
+        <li><a href="../index.html">The Fifty State Project v0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+      &copy; Copyright 2009.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 0.6.1.
+    </div>
+  </body>
+</html>
