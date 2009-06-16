@@ -49,10 +49,11 @@
 <h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="about-the-project">
 <h2>About the Project<a class="headerlink" href="#about-the-project" title="Permalink to this headline">¶</a></h2>
-<p>The goal here is to build scrapers and parsers in order to get as much state
+<p>The goal of the Fifty State Project is to build scrapers and parsers in order to get as much state
 legislative data as possible in one place.</p>
 <p>For details on the reasons for the project and goals behind the project see
 <a class="reference external" href="http://sunlightlabs.com/blog/2009/02/26/fifty-state-project/">the project announcement</a>.</p>
+<p>To stay up to date and communicate with other contributors to the project visit the <a class="reference external" href="http://groups.google.com/group/fifty-state-project">Fifty State Project Google Group</a>.</p>
 <p>For an editable overview of each state&#8217;s progress visit the <a class="reference external" href="http://wiki.sunlightlabs.com/index.php/State_Legislation_Page">Sunlight Labs Wiki</a>.</p>
 <div class="section" id="project-goals">
 <h3>Project Goals<a class="headerlink" href="#project-goals" title="Permalink to this headline">¶</a></h3>
@@ -82,17 +83,20 @@ legislative data as possible in one place.</p>
 </ol>
 <p>To encourage as many contributions as possible we aren&#8217;t saying &#8220;write in Python&#8221;
 or anything, but we do need the code to follow a few guidelines.</p>
-<p>For details on how scripts should be written and how they should run see scripts/README.rst.
-For details on how data should be stored see data/README.rst.</p>
+<p>For details on how scripts should be written and how they should run see <a class="reference external" href="scripts/pyutils/README.html"><em>Python Scraper API</em></a> (or <a class="reference external" href="scripts/rbutils/README.html"><em>Ruby Scraper API</em></a>).
+For details on how data should be stored see <a class="reference external" href="data/README.html"><em>Data Format</em></a>.</p>
 </div>
 <div class="section" id="usage-proposed">
 <h3>Usage (proposed)<a class="headerlink" href="#usage-proposed" title="Permalink to this headline">¶</a></h3>
 <dl class="docutils">
 <dt>Valid options:</dt>
-<dd>&#8211;year: a year or years the parser should attempt
-&#8211;all: Attempt to parse years from 1969-2009
-&#8211;upper: Parse upper chamber
-&#8211;lower: Parse lower chamber</dd>
+<dd><ul class="first last simple">
+<li><tt class="docutils literal"><span class="pre">--year</span></tt>: a year or years the parser should attempt</li>
+<li><tt class="docutils literal"><span class="pre">--all</span></tt>: Attempt to parse years from 1969-2009</li>
+<li><tt class="docutils literal"><span class="pre">--upper</span></tt>: Parse upper chamber</li>
+<li><tt class="docutils literal"><span class="pre">--lower</span></tt>: Parse lower chamber</li>
+</ul>
+</dd>
 <dt>The vision is that the flow will look something like this:</dt>
 <dd>$  ./scripts/nc/get_legislation &#8211;year=2009 &#8211;upper</dd>
 </dl>
@@ -102,9 +106,8 @@ For details on how data should be stored see data/README.rst.</p>
 <h2>Contributing<a class="headerlink" href="#contributing" title="Permalink to this headline">¶</a></h2>
 <p>If you are interested in contributing the recommended procedure is to check on
 the <a class="reference external" href="http://wiki.sunlightlabs.com/index.php/State_Legislation_Page">Sunlight Labs Wiki</a> and in the repository to see where your state is.
-The next step is generally to announce your interest on the <a class="reference external" href="http://groups.google.com/group/sunlightlabs">Sunlight Labs Mailing
-List</a> (this is where you can ask
-questions and make suggestions regarding the project).</p>
+The next step is to announce your interest on the <a class="reference external" href="http://groups.google.com/group/fifty-state-project">Fifty State Project Google Group</a>
+(this is where you can ask questions and make suggestions regarding the project).</p>
 <div class="section" id="managing-a-state">
 <h3>Managing a State<a class="headerlink" href="#managing-a-state" title="Permalink to this headline">¶</a></h3>
 <p>Once you have claimed a state on the wiki and mailing list you should probably
@@ -117,23 +120,25 @@ someone will merge your changes into the core.</p>
 </div>
 <div class="section" id="licensing">
 <h3>Licensing<a class="headerlink" href="#licensing" title="Permalink to this headline">¶</a></h3>
-<p>We feel that in order to protect everyone&#8217;s intellectual property it makes the
-most sense to keep the code under the <a class="reference external" href="http://www.fsf.org/licensing/licenses/agpl-3.0.html">AGPL license</a>.
-In a nutshell this means that you are not permitted to make changes to this source
-without releasing your code as well, this is intended to prevent abuse but we
-are sensitive to license choice on a project of this scale so if you have strong
-objections please raise them on the mailing list. See LICENSING for the full terms
-of the AGPLv3.</p>
+<p>As of June 15th 2009 the Fifty State Project is licensed under the <a class="reference external" href="http://www.fsf.org/licensing/licenses/gpl-3.0.html">GPLv3 license</a></p>
+<p>See LICENSING for the full terms of the GPLv3.</p>
 </div>
 </div>
 <div class="section" id="requirements">
 <h2>Requirements<a class="headerlink" href="#requirements" title="Permalink to this headline">¶</a></h2>
+<p>It is preferred for the sake of maintenance that scripts are written in
+Python, several Ruby scripts also exist if you are unfamiliar with Python.</p>
+<p>If you are completely unfamiliar with Python or Ruby writing a scraper in
+another language is preferred over not contributing at all but given the
+number of scripts already written in Python you are strongly encouraged  to
+consider it first.</p>
 <div class="section" id="python-2-5">
 <h3>Python (2.5+)<a class="headerlink" href="#python-2-5" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
 <li>BeautifulSoup</li>
 <li>html5lib</li>
 <li>simplejson if on Python 2.5</li>
+<li>(this list is out of date, refer to specific scripts/state directories for dependencies)</li>
 </ul>
 </div>
 <div class="section" id="ruby-1-8">
@@ -143,16 +148,6 @@ of the AGPLv3.</p>
 <li>fastercsv (gem install fastercsv)</li>
 <li>mechanize (gem install mechanize)</li>
 </ul>
-</div>
-<div class="section" id="a-note-on-new-requirements">
-<h3>A note on new requirements<a class="headerlink" href="#a-note-on-new-requirements" title="Permalink to this headline">¶</a></h3>
-<p>Because there are potentially fifty plus contributors to this project, a real
-effort should be made to keep the requirements of running the full suite to a minimum.</p>
-<p>In other words, if you can write your parser in language X and Y, choose language X
-if language X is already a requirement.
-If you are using a language (say Python) and you need to parse HTML and there is
-already an HTML parsing library (say BeautifulSoup) favor that over some other
-library (unless absolutely necessary).</p>
 </div>
 </div>
 </div>
@@ -179,7 +174,6 @@ library (unless absolutely necessary).</p>
 <li><a class="reference external" href="#requirements">Requirements</a><ul>
 <li><a class="reference external" href="#python-2-5">Python (2.5+)</a></li>
 <li><a class="reference external" href="#ruby-1-8">Ruby (1.8.*+)</a></li>
-<li><a class="reference external" href="#a-note-on-new-requirements">A note on new requirements</a></li>
 </ul>
 </li>
 </ul>

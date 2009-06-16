@@ -49,13 +49,13 @@
 <h1>Data Format<a class="headerlink" href="#data-format" title="Permalink to this headline">¶</a></h1>
 <p>This directory exists to be populated by the various scripts. Each state should have a toplevel directory named after the two-letter state abbreviation.</p>
 <div class="section" id="state-metadata">
-<h2>State Metadata<a class="headerlink" href="#state-metadata" title="Permalink to this headline">¶</a></h2>
+<span id="metadata-label"></span><h2>State Metadata<a class="headerlink" href="#state-metadata" title="Permalink to this headline">¶</a></h2>
 <p>In each state&#8217;s directory should be a file <tt class="docutils literal"><span class="pre">state_metadata.json</span></tt>. This file should contain a single object with at least the following required fields:</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">state_name</span></tt>: the name of this state, e.g. <tt class="docutils literal"><span class="pre">&quot;Pennsylvania&quot;</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">legislature_name</span></tt>: the name of the state legislature, e.g. <tt class="docutils literal"><span class="pre">&quot;Pennsylvania</span> <span class="pre">General</span> <span class="pre">Assembly&quot;</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">upper_chamber_name</span></tt> and <tt class="docutils literal"><span class="pre">lower_chamber_name</span></tt>: the names of the chambers of the state legislature, e.g. <tt class="docutils literal"><span class="pre">&quot;Senate&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;House</span> <span class="pre">of</span> <span class="pre">Representatives&quot;</span></tt></li>
-<li><tt class="docutils literal"><span class="pre">upper_title</span></tt> and <tt class="docutils literal"><span class="pre">lower_title</span></tt>: the title that members of each chamber hold, e.g. &#8220;Senator&#8221;, &#8220;Representative&#8221;</li>
+<li><tt class="docutils literal"><span class="pre">upper_title</span></tt> and <tt class="docutils literal"><span class="pre">lower_title</span></tt>: the title that members of each chamber hold, e.g. <tt class="docutils literal"><span class="pre">&quot;Senator&quot;</span></tt>, <tt class="docutils literal"><span class="pre">&quot;Representative&quot;</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">upper_term</span></tt> and <tt class="docutils literal"><span class="pre">lower_term</span></tt>: the length in years of a term in each chamber, e.g. <tt class="docutils literal"><span class="pre">2</span></tt>, <tt class="docutils literal"><span class="pre">4</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">sessions</span></tt>: a chronological listing of valid sessions, e.g. <tt class="docutils literal"><span class="pre">['2005-2006',</span> <span class="pre">'2007-2008',</span> <span class="pre">'2009-2010']</span></tt> or <tt class="docutils literal"><span class="pre">['81st',</span> <span class="pre">'82nd',</span> <span class="pre">'83rd']</span></tt></li>
 <li><tt class="docutils literal"><span class="pre">session_details</span></tt>: a dictionary with an entry for each session with the following attributes:</li>
@@ -118,8 +118,8 @@
 <p>Underneath the state&#8217;s directory should be a &#8216;legislators&#8217; directory with a separate JSON file for each legislator. Note that legislators who have served multiple terms should have a separate file for each session they served in. Each file should contain a single object with the following required fields:</p>
 <ul class="simple">
 <li><tt class="docutils literal"><span class="pre">session</span></tt>: the session in which this legislator served</li>
-<li><tt class="docutils literal"><span class="pre">chamber</span></tt>: the chamber in which this legislator served, &#8216;upper&#8217; or &#8216;lower&#8217;</li>
-<li><tt class="docutils literal"><span class="pre">district</span></tt>: the district this legislator is representing, as given by the state, e.g. &#8216;District 2&#8217;, &#8216;7th&#8217;, &#8216;District C&#8217;.</li>
+<li><tt class="docutils literal"><span class="pre">chamber</span></tt>: the chamber in which this legislator served, <tt class="docutils literal"><span class="pre">'upper'</span></tt> or <tt class="docutils literal"><span class="pre">'lower'</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">district</span></tt>: the district this legislator is representing, as given by the state, e.g. <tt class="docutils literal"><span class="pre">'District</span> <span class="pre">2'</span></tt>, <tt class="docutils literal"><span class="pre">'7th'</span></tt>, <tt class="docutils literal"><span class="pre">'District</span> <span class="pre">C'</span></tt>.</li>
 <li><tt class="docutils literal"><span class="pre">full_name</span></tt>: the full name of this legislator</li>
 <li><tt class="docutils literal"><span class="pre">first_name</span></tt>: the first name of this legislator</li>
 <li><tt class="docutils literal"><span class="pre">last_name</span></tt>: the last name of this legislator</li>
