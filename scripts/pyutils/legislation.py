@@ -51,7 +51,7 @@ class DateEncoder(json.JSONEncoder):
 class LegislationScraper(object):
     """Subclass for each state's scraper
 
-    Subclasses must define :method:`scrape_bills` and the attribute
+    Subclasses must define :meth:`scrape_bills` and the attribute
     `state`
 
     Put this at the top of your scripts::
@@ -206,7 +206,7 @@ class LegislationScraper(object):
     @contextlib.contextmanager
     def soup_context(self, url):
         """
-        Like :method:`urlopen_context`, except returns a BeautifulSoup
+        Like :meth:`urlopen_context`, except returns a BeautifulSoup
         parsed document.
         """
         body = self.urlopen(url)
@@ -470,11 +470,11 @@ class Bill(FiftystatesObject):
     def add_document(self, name, url, **kwargs):
         """
         Add a document or media item that is related to the bill.  Use this method to add documents such as Fiscal Notes, Analyses, Amendments,  or public hearing recordings.
+
+        If multiple formats of a document are provided, a good rule of thumb is to prefer text, followed by html, followed by pdf/word/etc.
+
         :param name: a name given to the document, e.g. 'Fiscal Note for Amendment LCO 6544'
         :param url: link to location of document or file
-
-
-          If multiple formats of a document are provided, a good rule of thumb is to prefer text, followed by html, followed by pdf/word/etc.
         """
         self['documents'].append(dict(name=name, url=url, **kwargs))
 
@@ -482,11 +482,11 @@ class Bill(FiftystatesObject):
         """
         Add a version of the text of this bill.
 
-        :param name: a name given to this version of the text, e.g. 'As Introduced',
-          'Version 2', 'As amended', 'Enrolled'
+        If multiple formats are provided, a good rule of thumb is to
+        prefer text, followed by html, followed by pdf/word/etc.
+
+        :param name: a name given to this version of the text, e.g. 'As Introduced', 'Version 2', 'As amended', 'Enrolled'
         :param url: the location of this version on the state's legislative website.
-          If multiple formats are provided, a good rule of thumb is to
-          prefer text, followed by html, followed by pdf/word/etc.
         """
         self['versions'].append(dict(name=name, url=url, **kwargs))
 
@@ -588,13 +588,24 @@ class Person(FiftystatesObject):
 
     def add_role(self, role, session, start_date=None, end_date=None, **kwargs):
         """
+        Associate a 'role' with a person. Examples of roles include
+        'Speaker of the House', 'Governor', 'Minority Leader'. When legislators
+        are created they are automatically given a 'Member' role for
+        the chamber they served in.
+
+        :param session: the session that the role was held in
+            (add_role should be called separately for each session if the role
+            carried across multiple sessions).
+
         If ``start_date`` or ``end_date`` are ``None``, they will default
-        to the start/end date of the given legislative session.
+        to the start/end date of the given legislative session; otherwise
+        they can be used to
 
-        Examples:
+        Examples: ::
 
-        leg.add_role('member', session='2009', chamber='upper',
-                     party='Republican', district='10th')
+            leg.add_role('Speaker of the House', session='2009',
+                         chamber='lower')
+            leg.add_role('Governor', session='2009')
         """
         self['roles'].append(dict(role=role, session=session,
                                   start_date=start_date,
