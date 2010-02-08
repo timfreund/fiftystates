@@ -4,29 +4,32 @@
 Python Scraper API
 ==================
 
+.. contents::
+   :local:
+
 LegislationScraper
 ==================
 
-.. autoclass:: pyutils.legislation.LegislationScraper
-   :members: __init__, urlopen, log, add_bill, add_legislator, scrape_bills, scrape_legislators, scrape_metadata
+.. autoclass:: legislation.LegislationScraper
+   :members: __init__, urlopen, urlopen_context, soup_context, log, add_bill, add_legislator, scrape_bills, scrape_legislators, scrape_metadata
 
 Bill
 ====
-.. autoclass:: pyutils.legislation.Bill
-   :members: __init__, add_action, add_sponsor, add_version, add_vote
+.. autoclass:: legislation.Bill
+   :members: __init__, add_action, add_sponsor, add_version, add_vote, add_document, add_source
 
 Vote
 ====
-.. autoclass:: pyutils.legislation.Vote
-   :members: __init__, yes, no, other
+.. autoclass:: legislation.Vote
+   :members: __init__, yes, no, other, add_source
 
 Legislator
 ==========
-.. autoclass:: pyutils.legislation.Legislator
-   :members: __init__
+.. autoclass:: legislation.Legislator
+   :members: __init__, add_source, add_role
 
 Exceptions
 ==========
-.. autoclass:: pyutils.legislation.ScrapeError
+.. autoclass:: legislation.ScrapeError
 
-.. autoclass:: pyutils.legislation.NoDataForYear
+.. autoclass:: legislation.NoDataForYear
