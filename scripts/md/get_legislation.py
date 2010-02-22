@@ -1,10 +1,11 @@
 #!/usr/bin/env python
-from lxml.html import fromstring
+from lxml.html import fromstring, tostring
 import datetime
 import os
 import re
 import sys
 import time
+from urllib2 import HTTPError
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from pyutils.legislation import (LegislationScraper, Bill, Vote, Legislator,
@@ -33,12 +34,11 @@ SESSIONS = {
 }
 
 BASE_URL = "http://mlis.state.md.us"
-
-# year, session, bill_type, number
-BILL_URL = BASE_URL + "/%s%s/billfile/%s%04d.htm"
-
+BILL_URL = BASE_URL + "/%s%s/billfile/%s%04d.htm" # year, session, bill_type, number
 SEN_URL = "http://www.msa.md.gov/msa/mdmanual/05sen/html/senal.html"
 DEL_URL = "http://www.msa.md.gov/msa/mdmanual/06hse/html/hseal.html"
+
+MOTION_RE = re.compile(r"(?P<motion>[\w\s]+) \((?P<yeas>\d{1,3})-(?P<nays>\d{1,3})\)")
 
 class MDLegislationScraper(LegislationScraper):
 
@@ -81,39 +81,101 @@ class MDLegislationScraper(LegislationScraper):
                 for elem in elems:
                     action_date = elem.text.strip()
                     if action_date != "No Action":
-                        action_date = datetime.datetime.strptime(
-                            "%s/%s" % (action_date, bill['session']), '%m/%d/%Y')
-                        action_desc = ""
-                        dd_elem = elem.getnext()
-                        while dd_elem is not None and dd_elem.tag == 'dd':
-                            if action_desc:
-                                action_desc = "%s %s" % (action_desc, dd_elem.text.strip())
-                            else:
-                                action_desc = dd_elem.text.strip()
-                            dd_elem = dd_elem.getnext()
-                        bill.add_action(chamber, action_desc, action_date)
+                        try:
+                            action_date = datetime.datetime.strptime(
+                                "%s/%s" % (action_date, bill['session']), '%m/%d/%Y')
+                            action_desc = ""
+                            dd_elem = elem.getnext()
+                            while dd_elem is not None and dd_elem.tag == 'dd':
+                                if action_desc:
+                                    action_desc = "%s %s" % (action_desc, dd_elem.text.strip())
+                                else:
+                                    action_desc = dd_elem.text.strip()
+                                dd_elem = dd_elem.getnext()
+                            bill.add_action(chamber, action_desc, action_date)
+                        except ValueError:
+                            pass # probably trying to parse a bad entry, not really an action
     
     def parse_bill_documents(self, doc, bill):
-        elems = doc.cssselect('a[name=Exbill]')[0] \
-            .getparent().getnext().getnext() \
-            .cssselect('dt')[0].cssselect('b')
+        for elem in doc.cssselect('b'):
+            if elem.text:
+                doc_type = elem.text.strip().strip(":")
+                if doc_type.startswith('Bill Text'):
+                    for sib in elem.itersiblings():
+                        if sib.tag == 'a':
+                            bill.add_version(sib.text.strip(','), BASE_URL + sib.get('href'))
+                elif doc_type.startswith('Fiscal and Policy Note'):
+                    for sib in elem.itersiblings():
+                        if sib.tag == 'a' and sib.text == 'Available':
+                            bill.add_document(doc_type, BASE_URL + sib.get('href'))
+    
+    def parse_bill_votes(self, doc, bill):
+        """    def __init__(self, chamber, date, motion, passed,
+                    yes_count, no_count, other_count, **kwargs):
+        """
+        params = {
+            'chamber': bill['chamber'],
+            'date': None,
+            'motion': None,
+            'passed': None,
+            'yes_count': None,
+            'no_count': None,
+            'other_count': None,
+        }
+        elems = doc.cssselect('a')
         for elem in elems:
-            document_type = elem.text
-            if document_type.startswith('Bill Text'):
-                for sib in elem.itersiblings():
-                    if sib.tag == 'a':
-                        bill.add_version(sib.text.strip(','), BASE_URL + sib.get('href'))
-            elif document_type.startswith('Fiscal and Policy Note'):
-                for sib in elem.itersiblings():
-                    if sib.tag == 'a' and sib.text == 'Available':
-                        bill.add_document(document_type, BASE_URL + sib.get('href'))
+            href = elem.get('href')
+            if href and "votes" in href:
+                vote_url = BASE_URL + href
+                vote_doc = fromstring(self.urlopen(vote_url))
+                # motion
+                for a in vote_doc.cssselect('a'):
+                     if 'motions' in a.get('href'):
+                        match = MOTION_RE.match(a.text)
+                        if match:
+                            motion = match.groupdict().get('motion', '').strip()
+                            params['passed'] = 'Passed' in motion or 'Adopted' in motion
+                            params['motion'] = motion
+                            break
+                # ugh
+                bs = vote_doc.cssselect('b')[:5]
+                yeas = int(bs[0].text.split()[0])
+                nays = int(bs[1].text.split()[0])
+                excused = int(bs[2].text.split()[0])
+                not_voting = int(bs[3].text.split()[0])
+                absent = int(bs[4].text.split()[0])
+                params['yes_count'] = yeas
+                params['no_count'] = nays
+                params['other_count'] = excused + not_voting + absent
+                
+                # date
+                # parse the following format: March 23, 2009 8:44 PM
+                (date_elem, time_elem) = vote_doc.cssselect('table td font')[1:3]
+                dt = "%s %s" % (date_elem.text.strip(), time_elem.text.strip())
+                params['date'] = datetime.datetime.strptime(dt, '%B %d, %Y %I:%M %p')
+                
+                vote = Vote(**params)
+                
+                status = None
+                for row in vote_doc.cssselect('table')[3].cssselect('tr'):
+                    text = row.text_content()
+                    if text.startswith('Voting Yea'):
+                        status = 'yes'
+                    elif text.startswith('Voting Nay'):
+                        status = 'no'
+                    elif text.startswith('Not Voting') or text.startswith('Excused'):
+                        status = 'other'
+                    else:
+                        for cell in row.cssselect('a'):
+                            getattr(vote, status)(cell.text.strip())
+                
+                bill.add_vote(vote)
+                bill.add_source(vote_url)
+                    
             
     def scrape_bill(self, chamber, year, session, bill_type, number):
-        """ Creates a bill object with the following attributes:
-                * title
-                * sponsors
+        """ Creates a bill object
         """
-
         url = BILL_URL % (year, session, bill_type, number)
         content = self.urlopen(url)
         doc = fromstring(content)
@@ -124,25 +186,31 @@ class MDLegislationScraper(LegislationScraper):
             .getparent().getparent().cssselect('dd')[0].text.strip()
             
         # create the bill object now that we have the title
+        print "%s %d" % (bill_type, number)
         bill = Bill(year, chamber, "%s %d" % (bill_type, number), title)
         bill.add_source(url)
 
-        self.parse_bill_sponsors(doc, bill)     # bill sponsors
-        self.parse_bill_actions(doc, bill)      # bill actions
-        self.parse_bill_documents(doc, bill)    # bill documents and versions
+        self.parse_bill_sponsors(doc, bill)     # sponsors
+        self.parse_bill_actions(doc, bill)      # actions
+        self.parse_bill_documents(doc, bill)    # documents and versions
+        self.parse_bill_votes(doc, bill)        # votes
         
         # add bill to collection
         self.add_bill(bill)
         
-        print bill
-        print "-" * 70
-        
-        time.sleep(5)
+        #time.sleep(1)
     
     def scrape_session(self, chamber, year, session):
         for bill_type in CHAMBERS[chamber]:
             for i in xrange(1, 2000):
-                self.scrape_bill(chamber, year, session, bill_type, i)
+                try:
+                    self.scrape_bill(chamber, year, session, bill_type, i)
+                except HTTPError, he:
+                    # hope this is because the page doesn't exist
+                    # and not because something is broken
+                    if he.code != 404:
+                        raise he
+                    break
 
     def scrape_bills(self, chamber, year):
         
@@ -151,21 +219,6 @@ class MDLegislationScraper(LegislationScraper):
         
         for session in SESSIONS[year]:
             self.scrape_session(chamber, year, session)
-
-        #         d1 = datetime.datetime.strptime('1/29/2010', '%m/%d/%Y')
-        #         v1 = Vote('upper', d1, 'Final passage',
-        #                   True, 2, 0, 0)
-        #         v1.yes('Bob Smith')
-        #         v1.yes('Sally Johnson')
-        # 
-        #         d2 = datetime.datetime.strptime('1/30/2010', '%m/%d/%Y')
-        #         v2 = Vote('lower', d2, 'Final passage',
-        #                   False, 0, 1, 1)
-        #         v2.no('B. Smith')
-        #         v2.other('Sally Johnson')
-        # 
-        #         b1.add_vote(v1)
-        #         b1.add_vote(v2)
         
     def scrape_legislators(self, chamber, year):
         
@@ -192,6 +245,25 @@ class MDLegislationScraper(LegislationScraper):
         # 
         #         self.add_legislator(l1)
         #         self.add_legislator(l2)
+        
+        """
+        ['__class__', '__contains__', '__copy__', '__deepcopy__', '__delattr__',
+        '__delitem__', '__dict__', '__doc__', '__format__', '__getattribute__',
+        '__getitem__', '__hash__', '__init__', '__iter__', '__len__', '__module__',
+        '__new__', '__nonzero__', '__reduce__', '__reduce_ex__', '__repr__',
+        '__reversed__', '__setattr__', '__setitem__', '__sizeof__', '__str__',
+        '__subclasshook__', '__weakref__', '_init', '_label__del', '_label__get',
+        '_label__set', 'addnext', 'addprevious', 'append', 'attrib', 'base',
+        'base_url', 'body', 'clear', 'cssselect', 'drop_tag', 'drop_tree',
+        'extend', 'find', 'find_class', 'find_rel_links', 'findall', 'findtext',
+        'forms', 'get', 'get_element_by_id', 'getchildren', 'getiterator',
+        'getnext', 'getparent', 'getprevious', 'getroottree', 'head', 'index',
+        'insert', 'items', 'iter', 'iterancestors', 'iterchildren', 'iterdescendants',
+        'iterfind', 'iterlinks', 'itersiblings', 'itertext', 'keys', 'label',
+        'make_links_absolute', 'makeelement', 'nsmap', 'prefix', 'remove',
+        'replace', 'resolve_base_href', 'rewrite_links', 'set', 'sourceline',
+        'tag', 'tail', 'text', 'text_content', 'values', 'xpath']
+        """
 
 
 if __name__ == '__main__':
