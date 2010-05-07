@@ -1,0 +1,10 @@
+[Maryland]
+abbreviation: md
+start_year: 1996
+bills: yes
+bill_versions: yes
+sponsors: yes
+actions: yes
+votes: no
+contributors: Jeremy Carbaugh
+notes:
