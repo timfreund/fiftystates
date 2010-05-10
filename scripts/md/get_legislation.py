@@ -58,7 +58,7 @@ class MDLegislationScraper(LegislationScraper):
             '2007-2008': {'years': [2007, 2008], 'sub_sessions':
                               ['Sub Session 1', 'Sub Session 2']},
             '2009-2010': {'years': [2009, 2010], 'sub_sessions': []}}}
-    
+
     def parse_bill_sponsors(self, doc, bill):
         sponsor_list = doc.cssselect('a[name=Sponlst]')
         if sponsor_list:
@@ -72,7 +72,7 @@ class MDLegislationScraper(LegislationScraper):
             sponsor = doc.cssselect('a[name=Sponsors]')[0] \
                 .getparent().getparent().cssselect('dd a')[0].text.strip()
             bill.add_sponsor('primary', sponsor)
-    
+
     def parse_bill_actions(self, doc, bill):
         for h5 in doc.cssselect('h5'):
             if h5.text in ('House Action', 'Senate Action'):
@@ -95,7 +95,7 @@ class MDLegislationScraper(LegislationScraper):
                             bill.add_action(chamber, action_desc, action_date)
                         except ValueError:
                             pass # probably trying to parse a bad entry, not really an action
-    
+
     def parse_bill_documents(self, doc, bill):
         for elem in doc.cssselect('b'):
             if elem.text:
@@ -108,7 +108,7 @@ class MDLegislationScraper(LegislationScraper):
                     for sib in elem.itersiblings():
                         if sib.tag == 'a' and sib.text == 'Available':
                             bill.add_document(doc_type, BASE_URL + sib.get('href'))
-    
+
     def parse_bill_votes(self, doc, bill):
         """    def __init__(self, chamber, date, motion, passed,
                     yes_count, no_count, other_count, **kwargs):
@@ -147,15 +147,15 @@ class MDLegislationScraper(LegislationScraper):
                 params['yes_count'] = yeas
                 params['no_count'] = nays
                 params['other_count'] = excused + not_voting + absent
-                
+
                 # date
                 # parse the following format: March 23, 2009 8:44 PM
                 (date_elem, time_elem) = vote_doc.cssselect('table td font')[1:3]
                 dt = "%s %s" % (date_elem.text.strip(), time_elem.text.strip())
                 params['date'] = datetime.datetime.strptime(dt, '%B %d, %Y %I:%M %p')
-                
+
                 vote = Vote(**params)
-                
+
                 status = None
                 for row in vote_doc.cssselect('table')[3].cssselect('tr'):
                     text = row.text_content()
@@ -168,11 +168,11 @@ class MDLegislationScraper(LegislationScraper):
                     else:
                         for cell in row.cssselect('a'):
                             getattr(vote, status)(cell.text.strip())
-                
+
                 bill.add_vote(vote)
                 bill.add_source(vote_url)
-                    
-            
+
+
     def scrape_bill(self, chamber, year, session, bill_type, number):
         """ Creates a bill object
         """
@@ -184,7 +184,7 @@ class MDLegislationScraper(LegislationScraper):
         # find <a name="Title">, get parent dt, get parent dl, then get dd within dl
         title = doc.cssselect('a[name=Title]')[0] \
             .getparent().getparent().cssselect('dd')[0].text.strip()
-            
+
         # create the bill object now that we have the title
         print "%s %d" % (bill_type, number)
         bill = Bill(year, chamber, "%s %d" % (bill_type, number), title)
@@ -194,12 +194,12 @@ class MDLegislationScraper(LegislationScraper):
         self.parse_bill_actions(doc, bill)      # actions
         self.parse_bill_documents(doc, bill)    # documents and versions
         self.parse_bill_votes(doc, bill)        # votes
-        
+
         # add bill to collection
-        self.add_bill(bill)
-        
+        self.save_bill(bill)
+
         #time.sleep(1)
-    
+
     def scrape_session(self, chamber, year, session):
         for bill_type in CHAMBERS[chamber]:
             for i in xrange(1, 2000):
@@ -213,58 +213,37 @@ class MDLegislationScraper(LegislationScraper):
                     break
 
     def scrape_bills(self, chamber, year):
-        
+
         if year not in SESSIONS:
             raise NoDataForYear(year)
-        
+
         for session in SESSIONS[year]:
             self.scrape_session(chamber, year, session)
-        
+
     def scrape_legislators(self, chamber, year):
-        
+
         if year not in SESSIONS:
             raise NoDataForYear(year)
-            
-        # 
+        #
         #         l1 = Legislator('2009-2010', chamber, '1st',
         #                         'Bob Smith', 'Bob', 'Smith', '',
         #                         'Democrat')
-        # 
+        #
         #         if chamber == 'upper':
         #             l1.add_role('President of the Senate', '2009-2010')
         #         else:
         #             l1.add_role('Speaker of the House', '2009-2010')
-        # 
+        #
         #         l1.add_source('http://example.com/Bob_Smith.html')
-        # 
+        #
         #         l2 = Legislator('2009-2010', chamber, '2nd',
         #                         'Sally Johnson', 'Sally', 'Johnson', '',
         #                         'Republican')
         #         l2.add_role('Minority Leader', '2009-2010')
         #         l2.add_source('http://example.com/Sally_Johnson.html')
-        # 
-        #         self.add_legislator(l1)
-        #         self.add_legislator(l2)
-        
-        """
-        ['__class__', '__contains__', '__copy__', '__deepcopy__', '__delattr__',
-        '__delitem__', '__dict__', '__doc__', '__format__', '__getattribute__',
-        '__getitem__', '__hash__', '__init__', '__iter__', '__len__', '__module__',
-        '__new__', '__nonzero__', '__reduce__', '__reduce_ex__', '__repr__',
-        '__reversed__', '__setattr__', '__setitem__', '__sizeof__', '__str__',
-        '__subclasshook__', '__weakref__', '_init', '_label__del', '_label__get',
-        '_label__set', 'addnext', 'addprevious', 'append', 'attrib', 'base',
-        'base_url', 'body', 'clear', 'cssselect', 'drop_tag', 'drop_tree',
-        'extend', 'find', 'find_class', 'find_rel_links', 'findall', 'findtext',
-        'forms', 'get', 'get_element_by_id', 'getchildren', 'getiterator',
-        'getnext', 'getparent', 'getprevious', 'getroottree', 'head', 'index',
-        'insert', 'items', 'iter', 'iterancestors', 'iterchildren', 'iterdescendants',
-        'iterfind', 'iterlinks', 'itersiblings', 'itertext', 'keys', 'label',
-        'make_links_absolute', 'makeelement', 'nsmap', 'prefix', 'remove',
-        'replace', 'resolve_base_href', 'rewrite_links', 'set', 'sourceline',
-        'tag', 'tail', 'text', 'text_content', 'values', 'xpath']
-        """
-
+        #
+        #         self.save_legislator(l1)
+        #         self.save_legislator(l2)
 
 if __name__ == '__main__':
     MDLegislationScraper.run()
