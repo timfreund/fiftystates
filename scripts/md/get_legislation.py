@@ -35,14 +35,12 @@ SESSIONS = {
 
 BASE_URL = "http://mlis.state.md.us"
 BILL_URL = BASE_URL + "/%s%s/billfile/%s%04d.htm" # year, session, bill_type, number
-SEN_URL = "http://www.msa.md.gov/msa/mdmanual/05sen/html/senal.html"
-DEL_URL = "http://www.msa.md.gov/msa/mdmanual/06hse/html/hseal.html"
 
 MOTION_RE = re.compile(r"(?P<motion>[\w\s]+) \((?P<yeas>\d{1,3})-(?P<nays>\d{1,3})\)")
 
 class MDLegislationScraper(LegislationScraper):
 
-    state = 'ex'
+    state = 'md'
 
     metadata = {
         'state_name': 'Maryland',
@@ -220,10 +218,53 @@ class MDLegislationScraper(LegislationScraper):
         for session in SESSIONS[year]:
             self.scrape_session(chamber, year, session)
 
+
+    def scrape_members(self, url, chamber):
+        detail_re = re.compile('\((R|D)\), (?:Senate President, )?(?:House Speaker, )?District (\w+)')
+
+        with self.urlopen_context(url) as page:
+            doc = fromstring(page)
+
+            # data on this page is <li>s that have anchor tags
+            for a in doc.cssselect('li a'):
+                link = a.get('href')
+                # tags don't close so we get the <li> and <a> content and diff them
+                name_text = a.text_content()
+                detail_text = a.getparent().text_content().replace(name_text, '')
+
+                # ignore if it is not a valid link
+                if link:
+                    # handle names
+                    names = name_text.split(',')
+                    last_name = names[0]
+                    first_name = names[1]
+                    # TODO: try to trim first name to remove middle initial
+                    if len(names) > 2:
+                        suffix = names[2]
+                    else:
+                        suffix = None
+
+                    # handle details
+                    details = detail_text.strip()
+                    party, district = detail_re.match(details).groups()
+
+                    leg = Legislator('current', 'lower', district,
+                                     ' '.join((first_name, last_name)),
+                                     first_name, last_name,
+                                     '', party, suffix=suffix,
+                                     url='http://www.msa.md.gov'+link)
+                    self.save_legislator(leg)
+
+
     def scrape_legislators(self, chamber, year):
+        house_url = 'http://www.msa.md.gov/msa/mdmanual/06hse/html/hseal.html'
+        sen_url = "http://www.msa.md.gov/msa/mdmanual/05sen/html/senal.html"
 
         if year not in SESSIONS:
             raise NoDataForYear(year)
+
+        self.scrape_members(house_url, 'lower')
+        self.scrape_members(sen_url, 'upper')
         #
         #         l1 = Legislator('2009-2010', chamber, '1st',
         #                         'Bob Smith', 'Bob', 'Smith', '',
