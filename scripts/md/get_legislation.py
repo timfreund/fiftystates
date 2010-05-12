@@ -248,10 +248,10 @@ class MDLegislationScraper(LegislationScraper):
                     details = detail_text.strip()
                     party, district = detail_re.match(details).groups()
 
-                    leg = Legislator('current', 'lower', district,
+                    leg = Legislator('current', chamber, district,
                                      ' '.join((first_name, last_name)),
-                                     first_name, last_name,
-                                     '', party, suffix=suffix,
+                                     first_name, last_name, '',
+                                     party, suffix=suffix,
                                      url='http://www.msa.md.gov'+link)
                     self.save_legislator(leg)
 
@@ -265,26 +265,7 @@ class MDLegislationScraper(LegislationScraper):
 
         self.scrape_members(house_url, 'lower')
         self.scrape_members(sen_url, 'upper')
-        #
-        #         l1 = Legislator('2009-2010', chamber, '1st',
-        #                         'Bob Smith', 'Bob', 'Smith', '',
-        #                         'Democrat')
-        #
-        #         if chamber == 'upper':
-        #             l1.add_role('President of the Senate', '2009-2010')
-        #         else:
-        #             l1.add_role('Speaker of the House', '2009-2010')
-        #
-        #         l1.add_source('http://example.com/Bob_Smith.html')
-        #
-        #         l2 = Legislator('2009-2010', chamber, '2nd',
-        #                         'Sally Johnson', 'Sally', 'Johnson', '',
-        #                         'Republican')
-        #         l2.add_role('Minority Leader', '2009-2010')
-        #         l2.add_source('http://example.com/Sally_Johnson.html')
-        #
-        #         self.save_legislator(l1)
-        #         self.save_legislator(l2)
+
 
 if __name__ == '__main__':
     MDLegislationScraper.run()
