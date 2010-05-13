@@ -5,6 +5,8 @@ bills: yes
 bill_versions: yes
 sponsors: yes
 actions: yes
-votes: no
-contributors: Jeremy Carbaugh
+votes: yes
+legislators: yes
+committees: no
+contributors: Jeremy Carbaugh, James Turk
 notes:
