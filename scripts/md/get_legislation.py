@@ -260,5 +260,28 @@ class MDLegislationScraper(LegislationScraper):
         self.scrape_members(sen_url, 'upper')
 
 
+    def scrape_committees(self, chamber):
+        house_url = 'http://www.msa.md.gov/msa/mdmanual/06hse/html/hsecom.html'
+        with self.lxml_context(house_url) as doc:
+            # distinct URLs containing /com/
+            committees = set([l.get('href') for l in doc.cssselect('li a')
+                              if l.get('href', '').find('/com/') != -1])
+
+        for com in committees:
+            com_url = 'http://www.msa.md.gov'+com
+            with self.lxml_context(com_url) as cdoc:
+                for h in cdoc.cssselect('h2, h3'):
+                    if h.text:
+                        committee_name = h.text
+                        break
+                print committee_name
+                for l in cdoc.cssselect('a[href]'):
+                    if com_url in l.get('href'):
+                        print ' ', l.text
+                    elif 'html/msa' in l.get('href'):
+                        print '   ', l.text
+
+
 if __name__ == '__main__':
-    MDLegislationScraper.run()
+    #MDLegislationScraper.run()
+    MDLegislationScraper().scrape_committees('lower')
