@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-from lxml.html import fromstring, tostring
 import datetime
 import os
 import re
@@ -108,9 +107,6 @@ class MDLegislationScraper(LegislationScraper):
                             bill.add_document(doc_type, BASE_URL + sib.get('href'))
 
     def parse_bill_votes(self, doc, bill):
-        """    def __init__(self, chamber, date, motion, passed,
-                    yes_count, no_count, other_count, **kwargs):
-        """
         params = {
             'chamber': bill['chamber'],
             'date': None,
@@ -121,86 +117,84 @@ class MDLegislationScraper(LegislationScraper):
             'other_count': None,
         }
         elems = doc.cssselect('a')
+
         for elem in elems:
             href = elem.get('href')
-            if href and "votes" in href:
+            if href and "votes" in href and href.endswith('htm'):
                 vote_url = BASE_URL + href
-                vote_doc = fromstring(self.urlopen(vote_url))
-                # motion
-                for a in vote_doc.cssselect('a'):
-                     if 'motions' in a.get('href'):
-                        match = MOTION_RE.match(a.text)
-                        if match:
-                            motion = match.groupdict().get('motion', '').strip()
-                            params['passed'] = 'Passed' in motion or 'Adopted' in motion
-                            params['motion'] = motion
-                            break
-                # ugh
-                bs = vote_doc.cssselect('b')[:5]
-                yeas = int(bs[0].text.split()[0])
-                nays = int(bs[1].text.split()[0])
-                excused = int(bs[2].text.split()[0])
-                not_voting = int(bs[3].text.split()[0])
-                absent = int(bs[4].text.split()[0])
-                params['yes_count'] = yeas
-                params['no_count'] = nays
-                params['other_count'] = excused + not_voting + absent
+                with self.lxml_context(vote_url) as vote_doc:
+                    # motion
+                    for a in vote_doc.cssselect('a'):
+                         if 'motions' in a.get('href'):
+                            match = MOTION_RE.match(a.text)
+                            if match:
+                                motion = match.groupdict().get('motion', '').strip()
+                                params['passed'] = 'Passed' in motion or 'Adopted' in motion
+                                params['motion'] = motion
+                                break
+                    # ugh
+                    bs = vote_doc.cssselect('b')[:5]
+                    yeas = int(bs[0].text.split()[0])
+                    nays = int(bs[1].text.split()[0])
+                    excused = int(bs[2].text.split()[0])
+                    not_voting = int(bs[3].text.split()[0])
+                    absent = int(bs[4].text.split()[0])
+                    params['yes_count'] = yeas
+                    params['no_count'] = nays
+                    params['other_count'] = excused + not_voting + absent
 
-                # date
-                # parse the following format: March 23, 2009 8:44 PM
-                (date_elem, time_elem) = vote_doc.cssselect('table td font')[1:3]
-                dt = "%s %s" % (date_elem.text.strip(), time_elem.text.strip())
-                params['date'] = datetime.datetime.strptime(dt, '%B %d, %Y %I:%M %p')
+                    # date
+                    # parse the following format: March 23, 2009 8:44 PM
+                    (date_elem, time_elem) = vote_doc.cssselect('table td font')[1:3]
+                    dt = "%s %s" % (date_elem.text.strip(), time_elem.text.strip())
+                    params['date'] = datetime.datetime.strptime(dt, '%B %d, %Y %I:%M %p')
 
-                vote = Vote(**params)
+                    vote = Vote(**params)
 
-                status = None
-                for row in vote_doc.cssselect('table')[3].cssselect('tr'):
-                    text = row.text_content()
-                    if text.startswith('Voting Yea'):
-                        status = 'yes'
-                    elif text.startswith('Voting Nay'):
-                        status = 'no'
-                    elif text.startswith('Not Voting') or text.startswith('Excused'):
-                        status = 'other'
-                    else:
-                        for cell in row.cssselect('a'):
-                            getattr(vote, status)(cell.text.strip())
+                    status = None
+                    for row in vote_doc.cssselect('table')[3].cssselect('tr'):
+                        text = row.text_content()
+                        if text.startswith('Voting Yea'):
+                            status = 'yes'
+                        elif text.startswith('Voting Nay'):
+                            status = 'no'
+                        elif text.startswith('Not Voting') or text.startswith('Excused'):
+                            status = 'other'
+                        else:
+                            for cell in row.cssselect('a'):
+                                getattr(vote, status)(cell.text.strip())
 
-                bill.add_vote(vote)
-                bill.add_source(vote_url)
+                    bill.add_vote(vote)
+                    bill.add_source(vote_url)
 
 
     def scrape_bill(self, chamber, year, session, bill_type, number):
         """ Creates a bill object
         """
         url = BILL_URL % (year, session, bill_type, number)
-        content = self.urlopen(url)
-        doc = fromstring(content)
+        with self.lxml_context(url) as doc:
+            # title
+            # find <a name="Title">, get parent dt, get parent dl, then get dd within dl
+            title = doc.cssselect('a[name=Title]')[0] \
+                .getparent().getparent().cssselect('dd')[0].text.strip()
 
-        # title
-        # find <a name="Title">, get parent dt, get parent dl, then get dd within dl
-        title = doc.cssselect('a[name=Title]')[0] \
-            .getparent().getparent().cssselect('dd')[0].text.strip()
+            # create the bill object now that we have the title
+            print "%s %d %s" % (bill_type, number, title)
+            bill = Bill(year, chamber, "%s %d" % (bill_type, number), title)
+            bill.add_source(url)
 
-        # create the bill object now that we have the title
-        print "%s %d" % (bill_type, number)
-        bill = Bill(year, chamber, "%s %d" % (bill_type, number), title)
-        bill.add_source(url)
+            self.parse_bill_sponsors(doc, bill)     # sponsors
+            self.parse_bill_actions(doc, bill)      # actions
+            self.parse_bill_documents(doc, bill)    # documents and versions
+            self.parse_bill_votes(doc, bill)        # votes
 
-        self.parse_bill_sponsors(doc, bill)     # sponsors
-        self.parse_bill_actions(doc, bill)      # actions
-        self.parse_bill_documents(doc, bill)    # documents and versions
-        self.parse_bill_votes(doc, bill)        # votes
+            # add bill to collection
+            self.save_bill(bill)
 
-        # add bill to collection
-        self.save_bill(bill)
-
-        #time.sleep(1)
 
     def scrape_session(self, chamber, year, session):
         for bill_type in CHAMBERS[chamber]:
-            for i in xrange(1, 2000):
+            for i in xrange(1129, 2000):
                 try:
                     self.scrape_bill(chamber, year, session, bill_type, i)
                 except HTTPError, he:
@@ -222,9 +216,7 @@ class MDLegislationScraper(LegislationScraper):
     def scrape_members(self, url, chamber):
         detail_re = re.compile('\((R|D)\), (?:Senate President, )?(?:House Speaker, )?District (\w+)')
 
-        with self.urlopen_context(url) as page:
-            doc = fromstring(page)
-
+        with self.lxml_context(url) as doc:
             # data on this page is <li>s that have anchor tags
             for a in doc.cssselect('li a'):
                 link = a.get('href')
