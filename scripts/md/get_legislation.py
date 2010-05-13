@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import datetime
+import itertools
 import os
 import re
 import sys
@@ -194,7 +195,7 @@ class MDLegislationScraper(LegislationScraper):
 
     def scrape_session(self, chamber, year, session):
         for bill_type in CHAMBERS[chamber]:
-            for i in xrange(1129, 2000):
+            for i in itertools.count(1):
                 try:
                     self.scrape_bill(chamber, year, session, bill_type, i)
                 except HTTPError, he:
