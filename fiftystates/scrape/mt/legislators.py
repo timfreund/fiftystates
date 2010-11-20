@@ -3,6 +3,7 @@ import csv
 
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.legislators import LegislatorScraper, Legislator
+from fiftystates.scrape.mt import metadata
 
 import html5lib
 import lxml.html
@@ -17,49 +18,44 @@ class MTLegislatorScraper(LegislatorScraper):
         self.parser = html5lib.HTMLParser(tree = html5lib.treebuilders.getTreeBuilder('lxml')).parse
 
         self.base_year = 1999
-        self.base_session = 56
+        self.base_term = 56
 
-    def get_suffix(self, year):
-        if str(year)[-2:] in ('11', '12', '13'):
+    def get_numeric_suffix(self, number):
+        number = str(number)
+        if str(number)[-2:] in ('11', '12', '13'):
             return 'th'
-        last_number = str(year)[-1:]
-        if last_number in ('0', '4', '5', '6', '7', '8', '9'):
+        last_digit = str(number)[-1:]
+        if last_digit in ('0', '4', '5', '6', '7', '8', '9'):
             return 'th'
-        elif last_number in ('1'):
+        elif last_digit in ('1'):
             return 'st'
-        elif last_number in ('2'):
+        elif last_digit in ('2'):
             return 'nd'
-        elif last_number in ('3'):
+        elif last_digit in ('3'):
             return 'rd'
 
-    def scrape(self, chamber, year):
-        year = int(year)
-        #2 year terms starting on odd year, so if even number, use the previous odd year
-        if year < self.base_year:
-            raise NoDataForPeriod(year)
-        if year % 2 == 0:
-            year -= 1
+    def scrape(self, chamber, term):
+        if term < self.base_term:
+            raise NoDataForPeriod(term)
 
-
-        session = self.base_session + ((year - self.base_year) / 2)
-        suffix = self.get_suffix(session)
-        if year < 2003:
-            self.scrape_pre_2003_legislators(chamber, year, session, suffix)
+        suffix = self.get_numeric_suffix(term)
+        if term < 58:
+            self.scrape_pre_58_legislators(chamber, term, suffix)
         else:
-            self.scrape_post_2003_legislators(chamber, year, session, suffix)
+            self.scrape_legislators(chamber, term, suffix)
 
-    def scrape_pre_2003_legislators(self, chamber, year, session, suffix):
-        url = 'http://leg.mt.gov/css/Sessions/%d%s/legname.asp' % (session, suffix)
+    def scrape_pre_58_legislators(self, chamber, term, suffix):
+        url = 'http://leg.mt.gov/css/Terms/%d%s/legname.asp' % (term, suffix)
         legislator_page = ElementTree(lxml.html.fromstring(self.urlopen(url)))
 
-        if year == 2001:
+        if term == 57:
             if chamber == 'upper':
                 tableName = '57th Legislatore Roster Senate (2001-2002)'
                 startRow = 3
             else:
                 tableName = '57th Legislator Roster (House)(2001-2002)'
                 startRow = 5
-        elif year == 1999:
+        elif term == 56:
             if chamber == 'upper':
                 tableName = 'Members of the Senate'
                 startRow = 3
@@ -97,7 +93,7 @@ class MTLegislatorScraper(LegislatorScraper):
                         else:
                             party = party_letter
 
-                        legislator = Legislator(session, chamber, district, '%s %s' % (first_name, last_name), \
+                        legislator = Legislator(term, chamber, district, '%s %s' % (first_name, last_name), \
                                                 first_name, last_name, '', party)
                         legislator.add_source(url)
                         self.save_legislator(legislator)
@@ -108,9 +104,14 @@ class MTLegislatorScraper(LegislatorScraper):
                         # that, start parsing legislator names
                         parse_names = True
 
-    def scrape_post_2003_legislators(self, chamber, year, session, suffix):
-        url = 'http://leg.mt.gov/content/sessions/%d%s/%d%sMembers.txt' % \
-            (session, suffix, year, chamber == 'upper' and 'Senate' or 'House')
+    def scrape_legislators(self, chamber, term, suffix):
+        year = 0
+        for term_data in metadata['terms']:
+            if term_data['name'] == term:
+                year = term_data['start_year']
+
+        url = 'http://leg.mt.gov/content/sessions/%s%s/%d%sMembers.txt' % \
+            (term, suffix, year, chamber == 'upper' and 'Senate' or 'House')
 
         # 2009 Senate is different than
         if year > 2008 and chamber == 'upper':
@@ -141,9 +142,9 @@ class MTLegislatorScraper(LegislatorScraper):
             first_name = first_name.capitalize()
             last_name = last_name.capitalize()
             #All we care about is the number
-            district = district.split('D ')[1]
+            district = district.split(' ')[1]
 
-            legislator = Legislator(session, chamber, district, '%s %s' % (first_name, last_name), \
+            legislator = Legislator(term, chamber, district, '%s %s' % (first_name, last_name), \
                                     first_name, last_name, '', party)
             legislator.add_source(url)
             self.save_legislator(legislator)
