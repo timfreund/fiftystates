@@ -11,6 +11,16 @@ import html5lib
 import lxml.html
 from lxml.etree import ElementTree
 
+action_map = {
+    "Returned with Governor's Line-item Veto": 'governor:vetoed:line-item',
+    'Introduced': 'bill:introduced',
+    'Referred to Committee': 'committee:referred',
+    'Rereferred to Committee': 'committee:referred',
+    'Signed by Governor': 'governor:signed',
+    'Taken from 2nd Reading; Rereferred to Committee': 'committee:referred',
+    'Vetoed by Governor': 'governor:vetoed',
+    }
+
 actor_map = {
     '(S)': 'upper',
     '(H)': 'lower',
@@ -56,19 +66,20 @@ class MTBillScraper(BillScraper):
 
         self.search_url_template = "http://laws.leg.mt.gov/laws%s/LAW0203W$BSRV.ActionQuery?P_BLTP_BILL_TYP_CD=%s&P_BILL_NO=%s&P_BILL_DFT_NO=&Z_ACTION=Find&P_SBJ_DESCR=&P_SBJT_SBJ_CD=&P_LST_NM1=&P_ENTY_ID_SEQ="
 
-    def getSession(self, year):
-        for session, years in metadata['session_details'].items():
-            if year in years['years']:
-                return session
+    def getTerm(self, year):
+        for term in metadata['terms']:
+            if term['start_year'] == year:
+                return term
 
     def scrape(self, chamber, year):
         year = int(year)
-        session = self.getSession(year)
         #2 year terms starting on odd year, so if even number, use the previous odd year
         if year < 1999:
             raise NoDataForPeriod(year)
         if year % 2 == 0:
             year -= 1
+
+        term = self.getTerm(year)
 
         if year == 1999:
             base_bill_url = 'http://data.opi.mt.gov/bills/BillHtml/'
@@ -87,17 +98,17 @@ class MTBillScraper(BillScraper):
                     bill_urls.append("%s%s" % (base_bill_url, bill_anchor.text))
 
         for bill_url in bill_urls:
-            bill = self.parse_bill(bill_url, session, chamber)
+            bill = self.parse_bill(bill_url, term, chamber)
             self.save_bill(bill)
 
-    def parse_bill(self, bill_url, session, chamber):
+    def parse_bill(self, bill_url, term, chamber):
         bill = None
         bill_page = ElementTree(lxml.html.fromstring(self.urlopen(bill_url)))
         for anchor in bill_page.findall('//a'):
             if (anchor.text_content().startswith('status of') or
                 anchor.text_content().startswith('Detailed Information (status)')):
                 status_url = anchor.attrib['href'].replace("\r", "").replace("\n", "")
-                bill = self.parse_bill_status_page(status_url, bill_url, session, chamber)
+                bill = self.parse_bill_status_page(status_url, bill_url, term, chamber)
             elif anchor.text_content().startswith('This bill in WP'):
                 index_url = anchor.attrib['href']
                 index_url = index_url[0:index_url.rindex('/')]
@@ -106,18 +117,18 @@ class MTBillScraper(BillScraper):
                 self.add_bill_versions(bill, index_url)
 
         if bill is None:
-            # No bill was found.  Maybe something like HB0790 in the 2005 session?
+            # No bill was found.  Maybe something like HB0790 in the 2005 term?
             # We can search for the bill metadata.
             page_name = bill_url.split("/")[-1].split(".")[0]
             bill_type = page_name[0:2]
             bill_number = page_name[2:]
-            laws_year = metadata['session_details'][session]['years'][0] % 100
+            laws_year = str(term['start_year'])[2:]
 
             status_url = self.search_url_template % (laws_year, bill_type, bill_number)
-            bill = self.parse_bill_status_page(status_url, bill_url, session, chamber)
+            bill = self.parse_bill_status_page(status_url, bill_url, term, chamber)
         return bill
 
-    def parse_bill_status_page(self, status_url, bill_url, session, chamber):
+    def parse_bill_status_page(self, status_url, bill_url, term, chamber):
         status_page = ElementTree(lxml.html.fromstring(self.urlopen(status_url)))
         # see 2007 HB 2... weird.
         try:
@@ -130,7 +141,7 @@ class MTBillScraper(BillScraper):
         except IndexError:
             title = status_page.xpath('/html/html[3]/tr[1]/td[2]')[0].text_content()
 
-        bill = Bill(session, chamber, bill_id, title)
+        bill = Bill(term['sessions'][0], chamber, bill_id, title)
         bill.add_source(bill_url)
 
         self.add_sponsors(bill, status_page)
@@ -147,13 +158,18 @@ class MTBillScraper(BillScraper):
             except KeyError:
                 actor = ''
                 action_name = action.xpath("td[1]")[0].text_content().strip()
+                if action_name == "Chapter Number Assigned":
+                    actor = "clerk"
 
             action_date = datetime.strptime(action.xpath("td[2]")[0].text, '%m/%d/%Y')
             action_votes_yes = action.xpath("td[3]")[0].text_content().replace("&nbsp", "")
             action_votes_no = action.xpath("td[4]")[0].text_content().replace("&nbsp", "")
             action_committee = action.xpath("td[5]")[0].text.replace("&nbsp", "")
 
-            bill.add_action(actor, action_name, action_date)
+            action_type = "other"
+            if action_map.has_key(action_name):
+                action_type = action_map[action_name]
+            bill.add_action(actor, action_name, action_date, type=action_type)
 
             # TODO: Review... should something be both an action and a vote?
             try:

@@ -35,27 +35,28 @@ class MTLegislatorScraper(LegislatorScraper):
             return 'rd'
 
     def scrape(self, chamber, term):
-        if term < self.base_term:
+        term_number = int(term)
+        if term_number < self.base_term:
             raise NoDataForPeriod(term)
 
         suffix = self.get_numeric_suffix(term)
-        if term < 58:
+        if term_number < 58:
             self.scrape_pre_58_legislators(chamber, term, suffix)
         else:
             self.scrape_legislators(chamber, term, suffix)
 
     def scrape_pre_58_legislators(self, chamber, term, suffix):
-        url = 'http://leg.mt.gov/css/Terms/%d%s/legname.asp' % (term, suffix)
+        url = 'http://leg.mt.gov/css/Sessions/%s%s/legname.asp' % (term, suffix)
         legislator_page = ElementTree(lxml.html.fromstring(self.urlopen(url)))
 
-        if term == 57:
+        if term == '57':
             if chamber == 'upper':
                 tableName = '57th Legislatore Roster Senate (2001-2002)'
                 startRow = 3
             else:
                 tableName = '57th Legislator Roster (House)(2001-2002)'
                 startRow = 5
-        elif term == 56:
+        elif term == '56':
             if chamber == 'upper':
                 tableName = 'Members of the Senate'
                 startRow = 3
