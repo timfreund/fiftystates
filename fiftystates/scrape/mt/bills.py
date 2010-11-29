@@ -1,6 +1,9 @@
+import logging
 import os
 import re
+import sys
 from datetime import datetime
+from optparse import make_option, OptionParser
 
 from fiftystates.scrape import NoDataForPeriod
 from fiftystates.scrape.bills import BillScraper, Bill
@@ -143,6 +146,7 @@ class MTBillScraper(BillScraper):
 
         bill = Bill(term['sessions'][0], chamber, bill_id, title)
         bill.add_source(bill_url)
+        bill.add_source(status_url)
 
         self.add_sponsors(bill, status_page)
         self.add_actions(bill, status_page)
@@ -162,6 +166,9 @@ class MTBillScraper(BillScraper):
                     actor = "clerk"
 
             action_date = datetime.strptime(action.xpath("td[2]")[0].text, '%m/%d/%Y')
+            vote_url = None
+            if len(action.xpath("td[3]/a")) == 1:
+                vote_url = action.xpath("td[3]/a")[0].attrib['href']
             action_votes_yes = action.xpath("td[3]")[0].text_content().replace("&nbsp", "")
             action_votes_no = action.xpath("td[4]")[0].text_content().replace("&nbsp", "")
             action_committee = action.xpath("td[5]")[0].text.replace("&nbsp", "")
@@ -171,46 +178,177 @@ class MTBillScraper(BillScraper):
                 action_type = action_map[action_name]
             bill.add_action(actor, action_name, action_date, type=action_type)
 
-            # TODO: Review... should something be both an action and a vote?
-            try:
-                action_votes_yes = int(action_votes_yes)
-                action_votes_no = int(action_votes_no)
-                passed = None
-                # some actions take a super majority, so we aren't just comparing the yeas and nays here.
-                for i in vote_passage_indicators:
-                    if action_name.count(i):
-                        passed = True
-                for i in vote_failure_indicators:
-                    if action_name.count(i) and passed == True:
-                        # a quick explanation:  originally an exception was
-                        # thrown if both passage and failure indicators were
-                        # present because I thought that would be a bug in my
-                        # lists.  Then I found 2007 HB 160.
-                        # Now passed = False if the nays outnumber the yays..
-                        # I won't automatically mark it as passed if the yays
-                        # ounumber the nays because I don't know what requires
-                        # a supermajority in MT.
-                        if action_votes_no >= action_votes_yes:
-                            passed = False
-                        else:
-                            raise Exception ("passage and failure indicator both present: %s" % action_name)
-                    if action_name.count(i) and passed == None:
-                        passed = False
-                for i in vote_ambiguous_indicators:
-                    if action_name.count(i):
-                        passed = action_votes_yes > action_votes_no
-                if passed is None:
-                    raise Exception("Unknown passage: %s" % action_name)
-                bill.add_vote(Vote(bill['chamber'],
-                                   action_date,
-                                   action_name,
-                                   passed,
-                                   action_votes_yes,
-                                   action_votes_no,
-                                   0))
-            except ValueError:
-                pass
+            vote = None
+            if vote_url:
+                vote = self.get_vote_results(bill, action_name, vote_url)
+            elif action_votes_yes.strip() != "":
+                try:
+                    vote = self.guess_vote_results(bill,
+                                                   action_votes_yes,
+                                                   action_votes_no,
+                                                   action_name,
+                                                   action_date)
+                except ValueError, ve:
+                    self.logger.error(ve)
+            
+            if vote is not None:
+                bill.add_vote(vote)
 
+
+
+    def get_vote_results(self, bill, motion_name, vote_url):
+        if not vote_url.count("http"):
+            for source in bill['sources']:
+                if source['url'].count("laws.leg.mt.gov"):
+                    vote_url = "%s/%s" % (source['url'][0:source['url'].rfind('/')],
+                                          vote_url)
+        vote_data = self.urlopen(vote_url)
+        if vote_data[0:6].upper() == "<HTML>":
+            vote = self.get_html_vote_results(bill, motion_name, vote_data)
+        elif vote_data[0:21].upper() == "UNOFFICIAL VOTE TALLY":
+            vote = self.get_text_vote_results(bill, motion_name, vote_data)
+        else:
+            self.logger.error("unknown vote format")
+
+        if vote is not None:
+            vote.add_source(vote_url)
+        return vote
+
+    def get_html_vote_results(self, bill, motion_name, vote_data):
+        vote = Vote(bill['chamber'], None, motion_name, False, 0, 0, 0)
+
+        passage_indicators = ['Do Pass', 'Do Concur']
+        for line in vote_data.splitlines():
+            if line in passage_indicators:
+                vote['passed'] = True
+        
+        vote_data = ElementTree(lxml.html.fromstring(vote_data))
+        for table in vote_data.findall("//table"):
+            left_header = table.findall("tr")[0].findall("th")[0].text.strip()
+            if 'YEAS' == left_header:
+                count_row = table.findall("tr")[-1]
+                vote['yes_count'] = int(count_row.findall("td")[0].text)
+                vote['no_count'] = int(count_row.findall("td")[1].text)
+                other_count = int(count_row.findall("td")[2].text)
+                vote['other_count'] = int(count_row.findall("td")[3].text) + other_count
+            elif (('' == left_header) and (4 == len(table.findall("tr")[0].findall("th")))):
+                for data in ElementTree(table).findall("//td"):
+                    vote_value, name = data.text.replace(u"\xa0", " ").split(" ", 1)
+                    vote_value = vote_value.strip()
+                    name = name.strip()
+
+                    if name != "":
+                        if vote_value == 'Y':
+                            vote.yes(name)
+                        elif vote_value == 'N':
+                            vote.no(name)
+                        else:
+                            vote.other(name)
+            elif (('' == left_header) and (0 == table.findall("tr")[1].findall("td")[0].text.find("DATE:"))):
+                date = table.findall("tr")[1].findall("td")[0].text
+                date = datetime.strptime(date.replace("DATE:", "").strip(), "%B %d, %Y")
+                vote['date'] = date
+        return vote
+
+    def get_text_vote_results(self, bill, motion_name, vote_data):
+        vote = Vote(bill['chamber'], None, motion_name, False, 0, 0, 0)
+        counting_yeas = False
+        counting_nays = False
+
+        for line in vote_data.splitlines():
+            if line.find("Bill:") == 0:
+                vote_date = line.split("Date: ")[1].split()[0].strip()
+                vote['date'] = datetime.strptime(vote_date, "%m/%d/%Y")
+            elif line.find("Motion:") == 0:
+                line = line.strip().upper()
+                for x in ['DO CONCUR', 'DO PASS', 'D/PASS']:
+                    if line.find(x) >= 0:
+                        vote['passed'] = True
+                if vote['passed'] == False:
+                    import pdb; pdb.set_trace()
+            elif ((line.find("Yeas:") == 0) or (line.find("Ayes:") == 0)):
+                counting_yeas = True
+                counting_nays = False
+            elif ((line.find("Nays:") == 0) or (line.find("Noes") == 0)):
+                counting_yeas = False
+                counting_nays = True
+            elif line.find("Total ") == 0:
+                if not (counting_yeas or counting_nays):
+                    vote['other_count'] += int(line.split()[1].strip())
+            elif line == '':
+                counting_yeas = False
+                counting_nays = False
+
+            if counting_yeas:
+                if line.find("Total ") == 0:
+                    vote['yes_count'] = int(line.split()[1].strip())
+                    line = ""
+                if line.find(":") != -1:
+                    line = line[line.find(":")+1:]
+                for name in line.split(","):
+                    name = name.strip()
+                    if name != '':
+                        if name[-1] == '.':
+                            name = name[0:-1]
+                        vote.yes(name)
+
+            if counting_nays:
+                if line.find("Total ") == 0:
+                    vote['no_count'] = int(line.split()[1].strip())
+                    line = ""
+                if line.find(":") != -1:
+                    line = line[line.find(":")+1:]
+                for name in line.split(","):
+                    name = name.strip()
+                    if name != '':
+                        if name[-1] == '.':
+                            name = name[0:-1]
+                        vote.no(name)
+
+        return vote
+
+    def guess_vote_results(self, bill, votes_yes, votes_no, action_name, action_date):
+        passed = None
+
+        try:
+            votes_yes = int(votes_yes)
+            votes_no = int(votes_no)
+        except ValueError, ve:
+            return None
+
+        # some actions take a super majority, so we aren't just comparing the yeas and nays here.
+        for i in vote_passage_indicators:
+            if action_name.count(i):
+                passed = True
+        for i in vote_failure_indicators:
+            if action_name.count(i) and passed == True:
+                # a quick explanation:  originally an exception was
+                # thrown if both passage and failure indicators were
+                # present because I thought that would be a bug in my
+                # lists.  Then I found 2007 HB 160.
+                # Now passed = False if the nays outnumber the yays..
+                # I won't automatically mark it as passed if the yays
+                # ounumber the nays because I don't know what requires
+                # a supermajority in MT.
+                if votes_no >= votes_yes:
+                    passed = False
+                else:
+                    raise Exception ("passage and failure indicator both present: %s" % action_name)
+            if action_name.count(i) and passed == None:
+                passed = False
+        for i in vote_ambiguous_indicators:
+            if action_name.count(i):
+                passed = votes_yes > votes_no
+        if passed is None:
+            raise Exception("Unknown passage: %s" % action_name)
+
+        return Vote(bill['chamber'],
+                    action_date,
+                    action_name,
+                    passed,
+                    votes_yes,
+                    votes_no,
+                    0)
 
     def add_sponsors(self, bill, status_page):
         for sponsor_row in status_page.xpath('/div/form[6]/table[1]/tr')[1:]:
@@ -243,3 +381,47 @@ class MTBillScraper(BillScraper):
 
                 version_url = index_url[0:index_url.find('bills')-1] + anchor.attrib['href']
                 bill.add_version(version_title, version_url)
+
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO,
+                        format="%(asctime)s %(name)s %(levelname)s " + 'mt' +
+                               " %(message)s",
+                        datefmt="%H:%M:%S",
+                       )
+
+
+    option_list = (
+        make_option('-c', '--chamber', action='store', dest='chamber',
+                    help='chamber to scrape [upper|lower]'),
+        make_option('-b', '--billurl', action='append', dest='billurls',
+                    help='session(s) to scrape'),
+        make_option('-t', '--term', action='store', dest='term',
+                    help='term to scrape'),
+        )
+    parser = OptionParser(option_list=option_list)
+    options, spares = parser.parse_args()
+
+    options_validated = True
+    for name in ['term', 'chamber', 'billurls']:
+        if getattr(options, name) is None:
+            print "No %s specified" % name
+            options_validated = False
+
+    term = None
+    for t in metadata['terms']:
+        if t['name'] == options.term:
+            term = t
+
+    if term is None:
+        print "Invalid term"
+        options_validated = False
+        
+    if not options_validated:
+        sys.exit(-1)
+
+    scraper = MTBillScraper(metadata, output_dir="./output/")
+    for url in options.billurls:
+        print term
+        scraper.save_bill(scraper.parse_bill(url, term, options.chamber))
+
