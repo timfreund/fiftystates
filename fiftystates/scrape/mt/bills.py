@@ -13,6 +13,7 @@ from fiftystates.scrape.mt import metadata
 import html5lib
 import lxml.html
 from lxml.etree import ElementTree
+from scrapelib import HTTPError
 
 action_map = {
     "Returned with Governor's Line-item Veto": 'governor:vetoed:line-item',
@@ -58,6 +59,9 @@ vote_ambiguous_indicators = [
     'Sponsor List Modified',
     'Tabled',
     'Taken from']
+
+class NoVoteDataException(Exception):
+    pass
 
 class MTBillScraper(BillScraper):
     #must set state attribute as the state's abbreviated name
@@ -180,33 +184,50 @@ class MTBillScraper(BillScraper):
 
             vote = None
             if vote_url:
-                vote = self.get_vote_results(bill, action_name, vote_url)
-            elif action_votes_yes.strip() != "":
                 try:
-                    vote = self.guess_vote_results(bill,
-                                                   action_votes_yes,
-                                                   action_votes_no,
-                                                   action_name,
-                                                   action_date)
-                except ValueError, ve:
-                    self.logger.error(ve)
-            
+                    vote = self.get_vote_results(bill, action_date, action_name, vote_url)
+                except NoVoteDataException:
+                    self.logger.warning("NoVoteDataException for %s %s" % (bill['session'], bill['bill_id']))
+
+            if vote is None or vote['passed'] is None:
+                vote = self.guess_vote_results(bill,
+                                               action_votes_yes,
+                                               action_votes_no,
+                                               action_name,
+                                               action_date,
+                                               vote)
+
             if vote is not None:
                 bill.add_vote(vote)
 
+    def get_vote_results(self, bill, vote_date, motion_name, vote_url):
+        """
+        Vote URLs come in two forms: relative and absolute.
+        Vote results come in two forms: HTML and TXT.
+        This method ensures that we have an absolute URL, downloads the
+        vote data, and does a bit of inspection to determine if we should
+        parse the results as HTML or TXT.
+        """
 
-
-    def get_vote_results(self, bill, motion_name, vote_url):
         if not vote_url.count("http"):
             for source in bill['sources']:
                 if source['url'].count("laws.leg.mt.gov"):
                     vote_url = "%s/%s" % (source['url'][0:source['url'].rfind('/')],
                                           vote_url)
-        vote_data = self.urlopen(vote_url)
+
+        vote_data = None
+        try:
+            vote_data = self.urlopen(vote_url)
+        except HTTPError, he:
+            if he.response.code == 404:
+                raise NoVoteDataException(he)
+            else:
+                raise he
+        
         if vote_data[0:6].upper() == "<HTML>":
             vote = self.get_html_vote_results(bill, motion_name, vote_data)
         elif vote_data[0:21].upper() == "UNOFFICIAL VOTE TALLY":
-            vote = self.get_text_vote_results(bill, motion_name, vote_data)
+            vote = self.get_text_vote_results(bill, vote_date, motion_name, vote_data)
         else:
             self.logger.error("unknown vote format")
 
@@ -216,6 +237,9 @@ class MTBillScraper(BillScraper):
 
     def get_html_vote_results(self, bill, motion_name, vote_data):
         vote = Vote(bill['chamber'], None, motion_name, False, 0, 0, 0)
+
+        if vote_data.count("No Vote Records Found for this Action.") > 0:
+            raise NoVoteDataException()
 
         passage_indicators = ['Do Pass', 'Do Concur']
         for line in vote_data.splitlines():
@@ -250,22 +274,17 @@ class MTBillScraper(BillScraper):
                 vote['date'] = date
         return vote
 
-    def get_text_vote_results(self, bill, motion_name, vote_data):
-        vote = Vote(bill['chamber'], None, motion_name, False, 0, 0, 0)
+    def get_text_vote_results(self, bill, vote_date, motion_name, vote_data):
+        vote = Vote(bill['chamber'], vote_date, motion_name, None, 0, 0, 0)
         counting_yeas = False
         counting_nays = False
 
         for line in vote_data.splitlines():
-            if line.find("Bill:") == 0:
-                vote_date = line.split("Date: ")[1].split()[0].strip()
-                vote['date'] = datetime.strptime(vote_date, "%m/%d/%Y")
-            elif line.find("Motion:") == 0:
+            if line.find("Motion:") == 0:
                 line = line.strip().upper()
-                for x in ['DO CONCUR', 'DO PASS', 'D/PASS']:
+                for x in ['DO CONCUR', 'DO PASS', 'DO ADOPT', ]:
                     if line.find(x) >= 0:
                         vote['passed'] = True
-                if vote['passed'] == False:
-                    import pdb; pdb.set_trace()
             elif ((line.find("Yeas:") == 0) or (line.find("Ayes:") == 0)):
                 counting_yeas = True
                 counting_nays = False
@@ -307,15 +326,31 @@ class MTBillScraper(BillScraper):
 
         return vote
 
-    def guess_vote_results(self, bill, votes_yes, votes_no, action_name, action_date):
+    def guess_vote_results(self, bill, votes_yes, votes_no, action_name, action_date, vote=None):
+        """
+        The fact that this method even exists makes a clear case for the Open State Project.
+        At this point we've tried to parse detailed vote results if they exist, and we will now
+        look at varied lists of passage and failure indicators to see if this vote matches any
+        of the known indicators.
+        """
+        
+        self.logger.debug("Educated passage guess for %s (%s)" % (bill['sources'][0]['url'], action_name))
         passed = None
-
         try:
             votes_yes = int(votes_yes)
             votes_no = int(votes_no)
         except ValueError, ve:
             return None
 
+        if vote is None:
+            vote = Vote(bill['chamber'],
+                        action_date,
+                        action_name,
+                        passed,
+                        votes_yes,
+                        votes_no,
+                        0)
+            
         # some actions take a super majority, so we aren't just comparing the yeas and nays here.
         for i in vote_passage_indicators:
             if action_name.count(i):
@@ -341,14 +376,10 @@ class MTBillScraper(BillScraper):
                 passed = votes_yes > votes_no
         if passed is None:
             raise Exception("Unknown passage: %s" % action_name)
-
-        return Vote(bill['chamber'],
-                    action_date,
-                    action_name,
-                    passed,
-                    votes_yes,
-                    votes_no,
-                    0)
+        else:
+            vote['passed'] = passed
+            
+        return vote
 
     def add_sponsors(self, bill, status_page):
         for sponsor_row in status_page.xpath('/div/form[6]/table[1]/tr')[1:]:
