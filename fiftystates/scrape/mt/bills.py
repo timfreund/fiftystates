@@ -88,13 +88,42 @@ class MTBillScraper(BillScraper):
 
         term = self.getTerm(year)
 
-        if year == 1999:
-            base_bill_url = 'http://data.opi.mt.gov/bills/BillHtml/'
-        else:
-            base_bill_url = 'http://data.opi.mt.gov/bills/%d/BillHtml/' % year
-        index_page = ElementTree(lxml.html.fromstring(self.urlopen(base_bill_url)))
+        for session in term['sessions']:
+            try:
+                session = int(session)
+                if session == 1999:
+                    base_bill_url = 'http://data.opi.mt.gov/bills/BillHtml/'
+                else:
+                    base_bill_url = 'http://data.opi.mt.gov/bills/%d/BillHtml/' % session
+            except ValueError:
+                special_session_urls = {
+                    '1999 Special Session': 'http://data.opi.mt.gov/bills/Specsess/0699/BillHtml/',
+                    '2000 Special Session': 'http://data.opi.mt.gov/bills/Specsess/0500/BillHtml/',
+                    '2002 August Special Session': 'http://data.opi.mt.gov/bills/Specsess/0802/BillHtml/',
+                    # http://leg.mt.gov/css/Sessions/Special%20Session/sept_2002/default.asp
+                    # There was an immediate effective date inserted into legislation created in the
+                    # August 2002 session.  The data is in a format that we can't parse at this time.
+                    '2002 September Special Session': None,
+                    '2005 December Special Session': 'http://data.opi.mt.gov/bills/Specsess/1205/BillHtml/',
+                    '2007 May Special Session': 'http://data.opi.mt.gov/bills/Specsess/0507/BillHtml/',
+                    '2007 September Special Session': 'http://data.opi.mt.gov/bills/Specsess/0907/BillHtml/',
+                    }
+                if special_session_urls.has_key(session):
+                    base_bill_url = special_session_urls[session]
+                else:
+                    self.logger.error("No bill URL available for session %s" % session)
 
+            for bill_url in self.get_bill_urls(base_bill_url, chamber):
+                bill = self.parse_bill(bill_url, term, str(session), chamber)
+                self.save_bill(bill)
+
+    def get_bill_urls(self, base_bill_url, chamber):
         bill_urls = []
+
+        if base_bill_url is None:
+            return bill_urls
+        
+        index_page = ElementTree(lxml.html.fromstring(self.urlopen(base_bill_url)))
         for bill_anchor in index_page.findall('//a'):
             # See 2009 HB 645
             if bill_anchor.text.find("govlineveto") == -1:
@@ -103,19 +132,16 @@ class MTBillScraper(BillScraper):
                     bill_urls.append("%s%s" % (base_bill_url, bill_anchor.text))
                 elif chamber == 'upper' and bill_anchor.text.startswith('S'):
                     bill_urls.append("%s%s" % (base_bill_url, bill_anchor.text))
+        return bill_urls
 
-        for bill_url in bill_urls:
-            bill = self.parse_bill(bill_url, term, chamber)
-            self.save_bill(bill)
-
-    def parse_bill(self, bill_url, term, chamber):
+    def parse_bill(self, bill_url, term, session, chamber):
         bill = None
         bill_page = ElementTree(lxml.html.fromstring(self.urlopen(bill_url)))
         for anchor in bill_page.findall('//a'):
             if (anchor.text_content().startswith('status of') or
                 anchor.text_content().startswith('Detailed Information (status)')):
                 status_url = anchor.attrib['href'].replace("\r", "").replace("\n", "")
-                bill = self.parse_bill_status_page(status_url, bill_url, term, chamber)
+                bill = self.parse_bill_status_page(status_url, bill_url, term, session, chamber)
             elif anchor.text_content().startswith('This bill in WP'):
                 index_url = anchor.attrib['href']
                 index_url = index_url[0:index_url.rindex('/')]
@@ -132,10 +158,10 @@ class MTBillScraper(BillScraper):
             laws_year = str(term['start_year'])[2:]
 
             status_url = self.search_url_template % (laws_year, bill_type, bill_number)
-            bill = self.parse_bill_status_page(status_url, bill_url, term, chamber)
+            bill = self.parse_bill_status_page(status_url, bill_url, term, session, chamber)
         return bill
 
-    def parse_bill_status_page(self, status_url, bill_url, term, chamber):
+    def parse_bill_status_page(self, status_url, bill_url, term, session, chamber):
         status_page = ElementTree(lxml.html.fromstring(self.urlopen(status_url)))
         # see 2007 HB 2... weird.
         try:
@@ -148,7 +174,7 @@ class MTBillScraper(BillScraper):
         except IndexError:
             title = status_page.xpath('/html/html[3]/tr[1]/td[2]')[0].text_content()
 
-        bill = Bill(term['sessions'][0], chamber, bill_id, title)
+        bill = Bill(session, chamber, bill_id, title)
         bill.add_source(bill_url)
         bill.add_source(status_url)
 
@@ -429,12 +455,14 @@ if __name__ == "__main__":
                     help='session(s) to scrape'),
         make_option('-t', '--term', action='store', dest='term',
                     help='term to scrape'),
+        make_option('-s', '--session', action='store', dest='session',
+                    help='session to scrape'),
         )
     parser = OptionParser(option_list=option_list)
     options, spares = parser.parse_args()
 
     options_validated = True
-    for name in ['term', 'chamber', 'billurls']:
+    for name in ['term', 'session', 'chamber', 'billurls']:
         if getattr(options, name) is None:
             print "No %s specified" % name
             options_validated = False
@@ -454,5 +482,5 @@ if __name__ == "__main__":
     scraper = MTBillScraper(metadata, output_dir="./output/")
     for url in options.billurls:
         print term
-        scraper.save_bill(scraper.parse_bill(url, term, options.chamber))
+        scraper.save_bill(scraper.parse_bill(url, term, options.session, options.chamber))
 
