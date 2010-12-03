@@ -162,32 +162,102 @@ class MTBillScraper(BillScraper):
         return bill
 
     def parse_bill_status_page(self, status_url, bill_url, term, session, chamber):
+        bill = None
+        bill_id = None
+        sources = [bill_url, status_url]
         status_page = ElementTree(lxml.html.fromstring(self.urlopen(status_url)))
+
+        if status_url == 'http://leg.mt.gov/css/sessions/special%20session/august_2002/bills/sb0001.asp':
+            import pdb; pdb.set_trace()
+        
         # see 2007 HB 2... weird.
         try:
             bill_id = status_page.xpath("/div/form[1]/table[2]/tr[2]/td[2]")[0].text_content()
         except IndexError:
-            bill_id = status_page.xpath('/html/html[2]/tr[1]/td[2]')[0].text_content()
+            try:
+                bill_id = status_page.xpath('/html/html[2]/tr[1]/td[2]')[0].text_content()
+            except IndexError:
+                pass
+        if bill_id is None:
+            try:
+                bill_table = self.get_bill_table(status_page)
+                bill_id = bill_table.xpath('//tr[2]/td[2]')[0].text_content()
+                # bill_id = status_page.xpath('/html/body/table[4]/tr/td[2]/table/tr/td[1]/table[1]/tbody/tr[2]/td[2]')[0].text_content()
+                # bill_id = status_page.xpath('/html/body/table[4]/tr/td[2]/table/tr[1]/td[1]/table/tr[2]/td[2]')[0].text_content()
+                bill = self.parse_special_session_bill_status_page(bill_id,
+                                                                   status_page,
+                                                                   bill_table,
+                                                                   session,
+                                                                   chamber,
+                                                                   sources)
+            except IndexError:
+                pass
+        else:
+            bill = self.parse_standard_bill_status_page(bill_id,
+                                                        status_page,
+                                                        session,
+                                                        chamber,
+                                                        sources)
 
+        if bill is None:
+            self.logger.error("No bill parsed for %s" % bill_url)
+        return bill
+
+    def parse_special_session_bill_status_page(self, bill_id, status_page, bill_table, session, chamber, sources):
+        title = bill_table.xpath('//tr[3]/td[2]')[0].text_content()
+        bill = Bill(session, chamber, bill_id, title)
+        for source in sources:
+            bill.add_source(source)
+        self.add_sponsors(bill, self.get_sponsor_table(status_page))
+        self.add_actions(bill, self.get_action_table(status_page))
+        return bill
+
+    def parse_standard_bill_status_page(self, bill_id, status_page, session, chamber, sources):
         try:
             title = status_page.xpath("/div/form[1]/table[2]/tr[3]/td[2]")[0].text_content()
         except IndexError:
-            title = status_page.xpath('/html/html[3]/tr[1]/td[2]')[0].text_content()
+            if len(status_page.xpath("/html/html")) == 2:
+                title = status_page.xpath('/html/html[2]/tr[1]/td[2]')[0].text_content()
+            else:
+                title = status_page.xpath('/html/html[3]/tr[1]/td[2]')[0].text_content()
 
         bill = Bill(session, chamber, bill_id, title)
-        bill.add_source(bill_url)
-        bill.add_source(status_url)
-
-        self.add_sponsors(bill, status_page)
-        self.add_actions(bill, status_page)
+        for source in sources:
+            bill.add_source(source)
+        self.add_sponsors(bill, self.get_sponsor_table(status_page))
+        self.add_actions(bill, self.get_action_table(status_page))
 
         return bill
 
+    def get_bill_table(self, status_page):
+        for table in status_page.xpath('//table'):
+            table = ElementTree(table)
+            if ((len(table.xpath('//tr')) == 4) and
+                (table.xpath('//tr[1]/td[1]')[0].text_content().strip().startswith('Bill Draft Number:'))):
+                return table
 
-    def add_actions(self, bill, status_page):
-        for action in status_page.xpath('/div/form[3]/table[1]/tr')[1:]:
+    def get_action_table(self, status_page):
+        for table in status_page.xpath('//table'):
+            table = ElementTree(table)
+            if ((len(table.xpath('//th')) == 5) and
+                (table.xpath('//th')[0].text_content().startswith('Action'))):
+                return table
+
+    def get_sponsor_table(self, status_page):
+        for table in status_page.xpath('//table'):
+            table = ElementTree(table)
+            if ((len(table.xpath('//th')) == 4) and
+            (table.xpath('//th')[0].text_content().startswith('Sponsor,'))):
+                return table
+
+    def add_actions(self, bill, action_table):
+        for action in action_table.xpath('//tr')[1:]:
             try:
-                actor = actor_map[action.xpath("td[1]")[0].text_content().split(" ")[0]]
+                # We previously split the action on spaces and took the first token
+                # to find the actor, but the actor and action run together due to a
+                # typo in http://leg.mt.gov/css/sessions/special%20session/may_2000/bills/hb0001.asp
+                # (search for "(S)Hearing to find the offending line)
+                actor = actor_map[action.xpath("td[1]")[0].text_content().strip()[0:3]]
                 action_name = action.xpath("td[1]")[0].text_content().replace(actor, "")[4:].strip()
             except KeyError:
                 actor = ''
@@ -201,7 +271,12 @@ class MTBillScraper(BillScraper):
                 vote_url = action.xpath("td[3]/a")[0].attrib['href']
             action_votes_yes = action.xpath("td[3]")[0].text_content().replace("&nbsp", "")
             action_votes_no = action.xpath("td[4]")[0].text_content().replace("&nbsp", "")
-            action_committee = action.xpath("td[5]")[0].text.replace("&nbsp", "")
+            action_committee = action.xpath("td[5]")[0].text
+            if action_committee is None:
+                # http://leg.mt.gov/css/sessions/special%20session/may_2000/bills/sb0001.asp
+                action_committee = ''
+            else:
+                action_committee.replace("&nbsp", "")
 
             action_type = "other"
             if action_map.has_key(action_name):
@@ -407,13 +482,15 @@ class MTBillScraper(BillScraper):
             
         return vote
 
-    def add_sponsors(self, bill, status_page):
-        for sponsor_row in status_page.xpath('/div/form[6]/table[1]/tr')[1:]:
+    def add_sponsors(self, bill, sponsor_table):
+        for sponsor_row in sponsor_table.xpath('//tr')[1:]:
             sponsor_type = sponsor_row.xpath("td[1]")[0].text
             sponsor_last_name = sponsor_row.xpath("td[2]")[0].text
             sponsor_first_name = sponsor_row.xpath("td[3]")[0].text
             sponsor_middle_initial = sponsor_row.xpath("td[4]")[0].text
-
+            if sponsor_middle_initial is None:
+                # http://leg.mt.gov/css/sessions/special%20session/may_2000/bills/sb0001.asp
+                sponsor_middle_initial = ''
             sponsor_middle_initial = sponsor_middle_initial.replace("&nbsp", "")
             sponsor_full_name = "%s, %s %s" % (sponsor_last_name,  sponsor_first_name, sponsor_middle_initial)
             sponsor_full_name = sponsor_full_name.strip()
